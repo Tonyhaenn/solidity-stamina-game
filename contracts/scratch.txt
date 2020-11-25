@@ -1,0 +1,43 @@
+//SPDX-License-Identifier: UNLICENSED
+/**
+Functions that were eliminated
+ */
+pragma solidity ^0.7.0;
+pragma experimental ABIEncoderV2;
+
+contract Scratch {
+  function validateStakes(uint256 currentStakeTimestamp, uint256  priorStakeTimestamp ) public view returns (bool){
+    //If priorStake - currentStake < 24H then valid else not validnp
+    // OR
+    // If currentState - roundEnd < 24H
+    uint256 stakeWindow = 24 * 60 * 60;
+    
+    bool currentStakeWithinRoundEnd = false;
+    if(roundEnd - currentStakeTimestamp < stakeWindow) {
+      currentStakeWithinRoundEnd = true;
+    }
+
+    bool currentStakeWithinPrior = false;
+    if(currentStakeTimestamp - priorStakeTimestamp < stakeWindow){
+      currentStakeWithinPrior = true;
+    }
+
+    return(currentStakeWithinRoundEnd || currentStakeWithinPrior);
+  }
+
+    /**
+   * @notice Getter for player round data.
+   * @param roundNum integer round number
+   * @param player player address
+   * @return array of stakes 
+   ** TODO: IS THIS STILL NECESSARY?
+   
+  function getPlayerRoundStakes(uint256 roundNum, address player) public view 
+  returns (Stake[] memory)
+  {
+    require(roundNum >0, "Round must be positive integer");
+    return roundPlayerStakeStorage[activeRound][player];
+  }
+  */
+}
+  
