@@ -66,11 +66,13 @@ contract Stamina is Ownable {
   ///@notice Mapping to store all stakes
   /// activeRound: {player: {dayNum: stake}}
   mapping(uint256 => mapping(address => mapping(uint256 => Stake))) public roundPlayerStakeStorage;
+  
   /*
   ///@notice Keep track of how many stakes a player has played for a given round
   /// roundNum: {player: numStakes}
   mapping(uint256 => mapping(address => uint256)) public playerStakeCount;
   */
+
   ///@notice roundPlayerCount: Mapping to keep track of player count
   /// round: numPlayers
   mapping(uint256 => uint256) private roundPlayerCount;
@@ -130,6 +132,7 @@ contract Stamina is Ownable {
     uint256 playerRoundTotalValue;
     uint256 currentDayRoundVal = currentDayRound();
     uint256 priorDayRoundVal = currentDayRoundVal - 1;
+    
     emit StakeLogEvent(currentDayRoundVal, priorDayRoundVal);
     //Get prior stake. If doesn't exist, expect 0, else Stake
     Stake memory priorRoundStake = roundPlayerStakeStorage[activeRound][player][priorDayRoundVal];

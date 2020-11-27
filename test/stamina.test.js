@@ -50,7 +50,7 @@ contract('Stamina', async accounts => {
     await staminaContract.stake({from: accounts[0], value: value});
 
     const result = await staminaContract.roundDayStakeBalance(1,1);
-    const resultAmount = result.amount.toNumber();
+    const resultAmount = result.toNumber();
     
     expect(resultAmount).to.equal(value);
   });
