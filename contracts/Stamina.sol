@@ -132,7 +132,7 @@ contract Stamina is Ownable {
     uint256 playerRoundTotalValue;
     uint256 currentDayRoundVal = currentDayRound();
     uint256 priorDayRoundVal = currentDayRoundVal - 1;
-    
+
     emit StakeLogEvent(currentDayRoundVal, priorDayRoundVal);
     //Get prior stake. If doesn't exist, expect 0, else Stake
     Stake memory priorRoundStake = roundPlayerStakeStorage[activeRound][player][priorDayRoundVal];
@@ -159,7 +159,7 @@ contract Stamina is Ownable {
     //First decrement player total balance from priorday
     if(priorDayRoundVal > 0 && priorRoundStake.roundTotalAmount > 0 ){
       emit DecrEvent(priorDayRoundVal, priorRoundStake.roundTotalAmount, roundDayStakeBalance[activeRound][priorDayRoundVal] );
-
+  // TODO: Investigate this line. Appears to be failing when two stakes happen inside same round
       roundDayStakeBalance[activeRound][priorDayRoundVal] = roundDayStakeBalance[activeRound][priorDayRoundVal].sub(priorRoundStake.roundTotalAmount);
     }
     
