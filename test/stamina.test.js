@@ -87,7 +87,7 @@ contract('Stamina', async accounts => {
     const stake1 = 100000000000000;
     const stake2 = 100000000000000;
     await staminaContract.stake({from: accounts[0], value: stake1});
-    timeMachine.advanceTimeAndBlock(24*60*60*2 + 1);
+    timeMachine.advanceTimeAndBlock(24*60*60*2+ 1);
 
     await staminaContract.stake({from: accounts[0], value: stake2});
 
@@ -116,6 +116,26 @@ contract('Stamina', async accounts => {
     const resultAmount = result.roundTotalAmount.toNumber();
     
     expect(resultAmount).to.equal(stake1 + stake2 + stake3);
+  });
+
+  it('Three sequential stakes', async function(){
+    const stake1 = 100000000000000;
+    const stake2 = 100000000000000;
+    const stake3 = 100000000000000;
+
+    await staminaContract.stake({from: accounts[0], value: stake1});
+    timeMachine.advanceTimeAndBlock(24*60*60 + 1);
+
+    await staminaContract.stake({from: accounts[0], value: stake2});
+    timeMachine.advanceTimeAndBlock(24*60*60 + 1);
+
+    await staminaContract.stake({from: accounts[0], value: stake3});
+    timeMachine.advanceTimeAndBlock(24*60*60 + 1);
+
+    const result = await staminaContract.roundPlayerStakeStorage(1, accounts[0],3);
+    const resultAmount = result.roundTotalAmount.toNumber();
+    
+    expect(resultAmount).to.equal(stake1+stake2+stake3);
   });
   //TODO: Add tests to make sure round totals are updated properlya
 /*

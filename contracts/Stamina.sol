@@ -33,7 +33,8 @@ contract Stamina is Ownable {
     address indexed player,
     uint256 indexed round,
     uint256 amount,
-    uint256 roundTotalAmount
+    uint256 roundTotalAmount,
+    uint256 playerStakeCount
   );
 
 /* LOG EVENTS. REMOVE THESE
@@ -48,15 +49,22 @@ contract Stamina is Ownable {
     uint256 lineNumber
   );
 
-  event StakeLogEvent(
-    uint256 currentDayRoundVal, 
-    uint256 priorDayRoundVal
+  event BeginStakeLogEvent(
+    uint256 priorDay,
+    uint256 priorDayRoundTotal,
+    uint256 currentDay, 
+    uint256 currentDayRoundTotal,
+    uint256 playerStakeCount,
+    uint256 stakeAmount
   );
 
-  event DecrEvent(
-    uint priorRoundVal, 
-    uint priorRoundStake, 
-    uint roundDayStakeBalance 
+  event EndStakeLogEvent(
+    uint256 priorDay,
+    uint256 priorDayRoundTotal,
+    uint256 currentDay, 
+    uint256 currentDayRoundTotal,
+    uint256 playerStakeCount,
+    uint256 stakeAmount
   );
 
   ///@notice For each round, day, store the total value of all stakes added. As player stakes, move value from Day1 to Day 2 (two operations, decrement total player stake from prior day and add to current day)
@@ -67,11 +75,11 @@ contract Stamina is Ownable {
   /// activeRound: {player: {dayNum: stake}}
   mapping(uint256 => mapping(address => mapping(uint256 => Stake))) public roundPlayerStakeStorage;
   
-  /*
+  
   ///@notice Keep track of how many stakes a player has played for a given round
   /// roundNum: {player: numStakes}
   mapping(uint256 => mapping(address => uint256)) public playerStakeCount;
-  */
+  
 
   ///@notice roundPlayerCount: Mapping to keep track of player count
   /// round: numPlayers
@@ -120,7 +128,7 @@ contract Stamina is Ownable {
     Each time a player stakes
     0. Figure out if the round is ended?
     1. Fetch the last stake
-    2. If last stake exists, add prior stake balance to current stake balance, if exiz
+    2. If last stake exists, add prior stake balance to current stake balance, if exists
     3. Move total player balance from prior day total to new day total
     */
     require(msg.value >= 0 , "Must contribute value to stake");
@@ -130,42 +138,69 @@ contract Stamina is Ownable {
     address player = msg.sender;
     //uint256 playerTotalStakes;
     uint256 playerRoundTotalValue;
-    uint256 currentDayRoundVal = currentDayRound();
-    uint256 priorDayRoundVal = currentDayRoundVal - 1;
+    uint256 currentDay = currentDayRound();
+    uint256 priorDay = currentDay - 1;
+    
+    playerStakeCount[activeRound][player] += 1;
 
-    emit StakeLogEvent(currentDayRoundVal, priorDayRoundVal);
     //Get prior stake. If doesn't exist, expect 0, else Stake
-    Stake memory priorRoundStake = roundPlayerStakeStorage[activeRound][player][priorDayRoundVal];
-    Stake memory currentRoundPriorStake = roundPlayerStakeStorage[activeRound][player][currentDayRoundVal];
+    Stake memory priorDayStake = roundPlayerStakeStorage[activeRound][player][priorDay];
+    Stake memory currentDayPriorStake = roundPlayerStakeStorage[activeRound][player][currentDay];
+
+    emit BeginStakeLogEvent(
+      priorDay,
+      priorDayStake.roundTotalAmount,
+      currentDay,
+      currentDayPriorStake.roundTotalAmount,
+      playerStakeCount[activeRound][player],
+      msg.value
+    );
 
     //Figure out appropriate value to carry forward
-    if(priorRoundStake.amount > 0 && currentRoundPriorStake.amount > 0) {
-      playerRoundTotalValue = priorRoundStake.roundTotalAmount + currentRoundPriorStake.roundTotalAmount + msg.value;
-    } else if (priorRoundStake.amount > 0) {
-      playerRoundTotalValue = priorRoundStake.roundTotalAmount + msg.value;
-    } else if (currentRoundPriorStake.amount > 0) {
-      playerRoundTotalValue = currentRoundPriorStake.roundTotalAmount + msg.value;
+    if(priorDayStake.amount > 0 && currentDayPriorStake.amount > 0) {
+      playerRoundTotalValue = priorDayStake.roundTotalAmount + currentDayPriorStake.roundTotalAmount + msg.value;
+    } else if (priorDayStake.amount > 0) {
+      playerRoundTotalValue = priorDayStake.roundTotalAmount + msg.value;
+    } else if (currentDayPriorStake.amount > 0) {
+      playerRoundTotalValue = currentDayPriorStake.roundTotalAmount + msg.value;
     } else {
       playerRoundTotalValue = msg.value;
     }
 
-    //Push new stake
-    roundPlayerStakeStorage[activeRound][player][currentDayRoundVal] = Stake({
+    //Update current day stake
+    roundPlayerStakeStorage[activeRound][player][currentDay] = Stake({
         amount: msg.value, 
         roundTotalAmount: playerRoundTotalValue
         });
     
     //Adjust totals
-    //First decrement player total balance from priorday
-    if(priorDayRoundVal > 0 && priorRoundStake.roundTotalAmount > 0 ){
-      emit DecrEvent(priorDayRoundVal, priorRoundStake.roundTotalAmount, roundDayStakeBalance[activeRound][priorDayRoundVal] );
-  // TODO: Investigate this line. Appears to be failing when two stakes happen inside same round
-      roundDayStakeBalance[activeRound][priorDayRoundVal] = roundDayStakeBalance[activeRound][priorDayRoundVal].sub(priorRoundStake.roundTotalAmount);
+    //First decrement player total balance from priorday for round
+    // Remove from both global counter, and player's prior day?8
+    
+    if(priorDay > 0 && priorDayStake.roundTotalAmount > 0 ){
+      roundDayStakeBalance[activeRound][priorDay] = 0;
+      roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount = 0;
     }
     
     //Then add player total balance to today
-    roundDayStakeBalance[activeRound][currentDayRoundVal] = roundDayStakeBalance[activeRound][currentDayRoundVal].add(msg.value);
-    emit StakeEvent(player, activeRound, msg.value, playerRoundTotalValue);
+    roundDayStakeBalance[activeRound][currentDay] = roundDayStakeBalance[activeRound][currentDay].add(msg.value);
+    
+    emit EndStakeLogEvent(
+      priorDay,
+      roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount,
+      currentDay, 
+      roundPlayerStakeStorage[activeRound][player][currentDay].roundTotalAmount,
+      playerStakeCount[activeRound][player],
+      msg.value
+    );
+
+    emit StakeEvent(
+      player, 
+      activeRound, 
+      msg.value, 
+      playerRoundTotalValue,
+      playerStakeCount[activeRound][player]
+      );
   }
   /** 
   * @notice Calculates a players winnings for a given round
