@@ -123,15 +123,17 @@ contract Stamina is Ownable {
    */
   function stake() public payable {
     /* DEV Notes
-    Tried to implement below. Blew up gas cost, and apparently has a bug.
-
+  
     Each time a player stakes
     0. Figure out if the round is ended?
     1. Fetch the last stake
     2. If last stake exists, add prior stake balance to current stake balance, if exists
     3. Move total player balance from prior day total to new day total
+
+    Gas cost seems high: >100k?
     */
     require(msg.value >= 0 , "Must contribute value to stake");
+    
     //Is the round ended? If so, advance round counter
     endRound();
 
@@ -146,7 +148,7 @@ contract Stamina is Ownable {
     //Get prior stake. If doesn't exist, expect 0, else Stake
     Stake memory priorDayStake = roundPlayerStakeStorage[activeRound][player][priorDay];
     Stake memory currentDayPriorStake = roundPlayerStakeStorage[activeRound][player][currentDay];
-
+    /*
     emit BeginStakeLogEvent(
       priorDay,
       priorDayStake.roundTotalAmount,
@@ -155,7 +157,7 @@ contract Stamina is Ownable {
       playerStakeCount[activeRound][player],
       msg.value
     );
-
+    */
     //Figure out appropriate value to carry forward
     if(priorDayStake.amount > 0 && currentDayPriorStake.amount > 0) {
       playerRoundTotalValue = priorDayStake.roundTotalAmount + currentDayPriorStake.roundTotalAmount + msg.value;
@@ -184,7 +186,7 @@ contract Stamina is Ownable {
     
     //Then add player total balance to today
     roundDayStakeBalance[activeRound][currentDay] = roundDayStakeBalance[activeRound][currentDay].add(msg.value);
-    
+    /*
     emit EndStakeLogEvent(
       priorDay,
       roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount,
@@ -193,7 +195,7 @@ contract Stamina is Ownable {
       playerStakeCount[activeRound][player],
       msg.value
     );
-
+    */
     emit StakeEvent(
       player, 
       activeRound, 

@@ -118,7 +118,7 @@ contract('Stamina', async accounts => {
     expect(resultAmount).to.equal(stake1 + stake2 + stake3);
   });
 
-  it('Three sequential stakes', async function(){
+  it('Three sequential stakes have a round total of all the stakes', async function(){
     const stake1 = 100000000000000;
     const stake2 = 100000000000000;
     const stake3 = 100000000000000;
@@ -138,7 +138,7 @@ contract('Stamina', async accounts => {
     expect(resultAmount).to.equal(stake1+stake2+stake3);
   });
   //TODO: Add tests to make sure round totals are updated properlya
-/*
+
   it('Stake Event emitted when player stakes', async function(){
     const value = 16000000000000000;
     const result = await staminaContract.stake({from: accounts[0], value: value});
@@ -154,7 +154,7 @@ contract('Stamina', async accounts => {
     const value = 0;
     truffleAssert.fails(staminaContract.stake({from: accounts[0], value: value}),truffleAssert.ErrorType.REVERT,"You must stake at least the minimum." );
   });
-  
+  /*  
   it('A round ends after the round length', async function(){
     const r1 = await staminaContract.activeRound()
     const value = 16000000000000000;
@@ -170,20 +170,6 @@ contract('Stamina', async accounts => {
     expect(resultNum).to.equal(expected)
 
   });
-
-  it('Timestamp 23H after prior is valid', async function(){
-    const t1 = Math.floor(new Date().getTime() / 1000)
-    const t2 = t1 + (23*60*60)
-    const result = await staminaContract.validateStakes(t2, t1)
-    expect(result).to.be.true;
-  })
-
-  it('Timestamp 24H after prior is valid', async function(){
-    const t1 = Math.floor(new Date().getTime() / 1000)
-    const t2 = t1 + (24*60*60)
-    const result = await staminaContract.validateStakes(t2, t1);
-    expect(result).to.be.false;
-  })
-*/
+  */
 })
 
