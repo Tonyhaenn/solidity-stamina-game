@@ -1,15 +1,15 @@
 {
-  "name": "stamina",
+  "name": "eth-stamina-game",
   "version": "1.0.0",
   "description": "Stamina is a game where every player gets their stake back, as long as they play 1x every 24h. If a player has a gap greater than 24h, all of their stakes are forfeit. 90% of the forfeited stakes are distributed to the winners, in proportion to the amount they staked in total each round. ",
   "main": "index.js",
   "dependencies": {
-    "@openzeppelin/contracts": "3.1.0"
+    "@openzeppelin/contracts": "3.3.0"
   },
   "devDependencies": {
-    "ganache-cli": "6.9.1",
-    "ganache-time-traveler": "1.0.14",
-    "truffle": "5.1.39",
+    "ganache-cli": "6.12.1",
+    "ganache-time-traveler": "1.0.15",
+    "truffle": "5.1.56",
     "truffle-assertions": "0.9.2"
   },
   "scripts": {
