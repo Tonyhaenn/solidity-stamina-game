@@ -23,6 +23,7 @@ contract Stamina is Ownable {
   uint256 public roundStart;
   uint256 public roundEnd;
   uint256 public activeRound;
+  uint256 public houseRake;
 
   struct Stake {
     uint256 amount;
@@ -34,6 +35,7 @@ contract Stamina is Ownable {
     uint256 indexed round,
     uint256 amount,
     uint256 roundTotalAmount,
+    uint256 playerRoundTotalAmount,
     uint256 playerStakeCount
   );
 
@@ -67,6 +69,16 @@ contract Stamina is Ownable {
     uint256 stakeAmount
   );
 
+  event debugShareEvent(
+    uint256 day,
+    uint256 brokenStakesVal,
+    uint256 fullStakes,
+    uint256 playerStakes,
+    uint256 winnings
+  );
+  
+  
+
   ///@notice For each round, day, store the total value of all stakes added. As player stakes, move value from Day1 to Day 2 (two operations, decrement total player stake from prior day and add to current day)
   /// roundNum: {day: balance}
   mapping(uint256 => mapping(uint256 => uint256)) public roundDayStakeBalance;
@@ -79,12 +91,10 @@ contract Stamina is Ownable {
   ///@notice Keep track of how many stakes a player has played for a given round
   /// roundNum: {player: numStakes}
   mapping(uint256 => mapping(address => uint256)) public playerStakeCount;
-  
 
   ///@notice roundPlayerCount: Mapping to keep track of player count
-  /// round: numPlayers
-  mapping(uint256 => uint256) private roundPlayerCount;
-
+  /// round: {day: numPlayers}
+  mapping(uint256 => mapping( uint256 => uint256)) public roundDayPlayerCount;
   
   /**
    * @notice Constructor for contract that sets base values for round length, and minimum stake
@@ -94,6 +104,7 @@ contract Stamina is Ownable {
     roundStart = block.timestamp;
     roundEnd = block.timestamp + roundLength;
     activeRound = 1;
+    houseRake = 10;
   }
 
   /**
@@ -138,12 +149,10 @@ contract Stamina is Ownable {
     endRound();
 
     address player = msg.sender;
-    //uint256 playerTotalStakes;
     uint256 playerRoundTotalValue;
     uint256 currentDay = currentDayRound();
     uint256 priorDay = currentDay - 1;
-    
-    playerStakeCount[activeRound][player] += 1;
+
 
     //Get prior stake. If doesn't exist, expect 0, else Stake
     Stake memory priorDayStake = roundPlayerStakeStorage[activeRound][player][priorDay];
@@ -159,6 +168,7 @@ contract Stamina is Ownable {
     );
     */
     //Figure out appropriate value to carry forward
+    // Consider if this should be re-written with safeMath add
     if(priorDayStake.amount > 0 && currentDayPriorStake.amount > 0) {
       playerRoundTotalValue = priorDayStake.roundTotalAmount + currentDayPriorStake.roundTotalAmount + msg.value;
     } else if (priorDayStake.amount > 0) {
@@ -177,15 +187,22 @@ contract Stamina is Ownable {
     
     //Adjust totals
     //First decrement player total balance from priorday for round
-    // Remove from both global counter, and player's prior day?8
+    // Remove from both global counter, and player's prior day
     
     if(priorDay > 0 && priorDayStake.roundTotalAmount > 0 ){
-      roundDayStakeBalance[activeRound][priorDay] = 0;
+      //Set player stake balance to zero
       roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount = 0;
+      //Remove player's prior day round total from the global stake balance
+      //This overflows. Why?
+      roundDayStakeBalance[activeRound][priorDay].sub(priorDayStake.roundTotalAmount);
+      
     }
     
     //Then add player total balance to today
     roundDayStakeBalance[activeRound][currentDay] = roundDayStakeBalance[activeRound][currentDay].add(msg.value);
+
+    playerStakeCount[activeRound][player] += 1;
+    roundDayPlayerCount[activeRound][currentDay] +=1;
     /*
     emit EndStakeLogEvent(
       priorDay,
@@ -200,45 +217,68 @@ contract Stamina is Ownable {
       player, 
       activeRound, 
       msg.value, 
+      roundDayStakeBalance[activeRound][currentDay],
       playerRoundTotalValue,
       playerStakeCount[activeRound][player]
-      );
+    );
   }
-  /** 
-  * @notice Calculates a players winnings for a given round
-  * @param roundNum round 
-  * @param player player address
-  */
-  function playerRoundWinnings(uint256 roundNum, address player) public view {
-    // -- Multiple functions?
-    // Func 1
-    // Get player stakes, determine if any are valid
-    // If not, return 0
-    //for (uint256 index = 0; index < array.length; index++) {
-    //    const element = array[index];
-    //}
-    // Func 2
-    // Determine how many stakes are valid given a set of stakes
 
-    // func 3
-    // Get all stakes and which sets are valid
-    // Player valid stakes / all valid stakes
-    // Return proportion * invalid stakes + player valid 
+  /**
+   * @notice For a given round, return the total of all broken stakes
+   * @param roundNum round integer
+   * @param day day integer
+   */
+   function brokenStakes(uint256 roundNum, uint256 day) public view returns (uint256) {
+     /* DEV NOTES:
+      * Loop down through each day, summing each day total, excluding currentDay ?
+      */
+  
+      uint256 brokenStakesVal;
+      for (uint256 index = 0 ; index < day; index++) {
+        brokenStakesVal += roundDayStakeBalance[roundNum][index];
+      }
+
+      return brokenStakesVal;
+   }
+
+   
+  /** 
+   * @notice Calculates a players winnings for a given round
+   * @param roundNum round to calculate winnings for
+   * @param player player address
+  */
+  function playerRoundWinnings(uint256 roundNum, address player) public returns(uint256) {
+  /**
+   *  @notice Calculates player's take from pot. Pot is all 'broken' stakes less house take, divided amongst all active players in final round
+   *  @param roundNum of a found
+   *  @param player address 
+   */ 
+   
+    uint256 day = roundNum == activeRound ? currentDayRound() : roundLength;
+    uint256 brokenStakesVal = brokenStakes(roundNum, day);
+    uint256 fullStakes = roundDayStakeBalance[roundNum][day];
+    uint256 playerStakes = roundPlayerStakeStorage[roundNum][player][day].roundTotalAmount;
+    uint256 winnings = (brokenStakesVal * (1 - (houseRake / 100 )))*(playerStakes / fullStakes);
+
+    emit debugShareEvent(
+      day,
+      brokenStakesVal,
+      fullStakes,
+      playerStakes,
+      winnings
+    );
+
+    return winnings;
   }
   /**
    *  @notice Allows a player to withdraw winnings
    *  @param roundNum of round where winnings should be withdrawn
    */
-  //function playerWithdraw(uint256 roundNum) public  {
+  //function withdraw(uint256 roundNum) public  {
   //  address playerAddress = msg.sender;
   //
   //}
 
-  /**
-   * @notice Determines if a stake is valid by comparing to newer stake timestamp. Difference must be less than 24H
-   * @param currentStakeTimestamp stake to validate
-   * @param priorStakeTimestamp prior stake when sorted timestamp descending (newest stake)
-   */
 
 
 }
