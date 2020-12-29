@@ -99,7 +99,7 @@ contract Stamina is Ownable {
   /**
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
-  constructor() public {
+  constructor() {
     roundLength = 14 * 1 days;
     roundStart = block.timestamp;
     roundEnd = block.timestamp + roundLength;
@@ -248,11 +248,6 @@ contract Stamina is Ownable {
    * @param player player address
   */
   function playerRoundWinnings(uint256 roundNum, address player) public returns(uint256) {
-  /**
-   *  @notice Calculates player's take from pot. Pot is all 'broken' stakes less house take, divided amongst all active players in final round
-   *  @param roundNum of a found
-   *  @param player address 
-   */ 
    
     uint256 day = roundNum == activeRound ? currentDayRound() : roundLength;
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
