@@ -1,11 +1,10 @@
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-import { task } from 'hardhat/config';
+import { HardhatUserConfig, task  } from "hardhat/config";
+
 import "@nomiclabs/hardhat-waffle";
 
 //Generate types for contracts on compile
-//import "hardhat-typechain";
+import "hardhat-typechain";
+
 //Audit gas usage
 import "hardhat-gas-reporter"
 
@@ -17,7 +16,7 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
   }
 });
 
-export default {
+const config: HardhatUserConfig = {
   solidity: "0.7.3",
   gasReporter: {
     currency: 'USD',
@@ -25,3 +24,5 @@ export default {
     enabled: (process.env.REPORT_GAS) ? true : false
   }
 };
+
+export default config;
