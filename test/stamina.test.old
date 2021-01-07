@@ -56,7 +56,7 @@ describe('Stamina Basics', async () => {
 
     const result = await staminaContract.activeRound()
     const resultNum = result.toNumber()
-    const expected = r1.toNumber() + 1;
+    const expected = r1.toNumber() + 1
     
     expect(resultNum).to.equal(expected)
 
