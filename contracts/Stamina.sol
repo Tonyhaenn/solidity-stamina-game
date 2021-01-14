@@ -10,6 +10,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 /** 
 @title Stamina
@@ -87,8 +88,6 @@ contract Stamina is Ownable {
   /// activeRound: {player: {dayNum: stake}}
   mapping(uint256 => mapping(address => mapping(uint256 => Stake))) public roundPlayerStakeStorage;
   
-  
-  ///@notice Keep track of how many stakes a player has played for a given round
   /// roundNum: {player: numStakes}
   mapping(uint256 => mapping(address => uint256)) public playerStakeCount;
 
@@ -99,6 +98,7 @@ contract Stamina is Ownable {
   /**
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
+  
   constructor() {
     roundLength = 14 * 1 days;
     roundStart = block.timestamp;
@@ -152,21 +152,16 @@ contract Stamina is Ownable {
     uint256 playerRoundTotalValue;
     uint256 currentDay = currentDayRound();
     uint256 priorDay = currentDay - 1;
-
-
+    /*
+    TODO:
+    Write out the expected flow of funds
+    Update variable names to be a tad clearer?
+    Add logging to show funds moving between states/days
+    */
     //Get prior stake. If doesn't exist, expect 0, else Stake
     Stake memory priorDayStake = roundPlayerStakeStorage[activeRound][player][priorDay];
     Stake memory currentDayPriorStake = roundPlayerStakeStorage[activeRound][player][currentDay];
-    /*
-    emit BeginStakeLogEvent(
-      priorDay,
-      priorDayStake.roundTotalAmount,
-      currentDay,
-      currentDayPriorStake.roundTotalAmount,
-      playerStakeCount[activeRound][player],
-      msg.value
-    );
-    */
+    
     //Figure out appropriate value to carry forward
     // Consider if this should be re-written with safeMath add
     if(priorDayStake.amount > 0 && currentDayPriorStake.amount > 0) {
@@ -178,7 +173,7 @@ contract Stamina is Ownable {
     } else {
       playerRoundTotalValue = msg.value;
     }
-
+    
     //Update current day stake
     roundPlayerStakeStorage[activeRound][player][currentDay] = Stake({
         amount: msg.value, 
@@ -192,27 +187,32 @@ contract Stamina is Ownable {
     if(priorDay > 0 && priorDayStake.roundTotalAmount > 0 ){
       //Set player stake balance to zero
       roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount = 0;
-      //Remove player's prior day round total from the global stake balance
-      //This overflows. Why?
-      roundDayStakeBalance[activeRound][priorDay].sub(priorDayStake.roundTotalAmount);
       
+      //Remove player's prior day round total from the global stake balance
+      //Currently overflows -- why?
+      console.log('Current Player Stake Count: %s', playerStakeCount[activeRound][player] );
+      console.log('Current Day: %s', currentDay);
+      console.log('Current Day Round Total: %s', playerRoundTotalValue);
+      console.log('Prior Day: %s', roundDayStakeBalance[activeRound][priorDay]);
+      
+      console.log('Prior Day Round Total Amount: %s', priorDayStake.roundTotalAmount);
+      console.log('==================');
+      
+      roundDayStakeBalance[activeRound][priorDay] = roundDayStakeBalance[activeRound][priorDay].sub(priorDayStake.roundTotalAmount);
+
+      console.log('New Global Balance (sub): %s', roundDayStakeBalance[activeRound][priorDay]);
     }
     
     //Then add player total balance to today
+    console.log('Prior Global Balance: %s', roundDayStakeBalance[activeRound][currentDay]);
+    
     roundDayStakeBalance[activeRound][currentDay] = roundDayStakeBalance[activeRound][currentDay].add(msg.value);
-
+    
+    console.log('New Global Balancel (add): %s', roundDayStakeBalance[activeRound][currentDay]);
+    
     playerStakeCount[activeRound][player] += 1;
     roundDayPlayerCount[activeRound][currentDay] +=1;
-    /*
-    emit EndStakeLogEvent(
-      priorDay,
-      roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount,
-      currentDay, 
-      roundPlayerStakeStorage[activeRound][player][currentDay].roundTotalAmount,
-      playerStakeCount[activeRound][player],
-      msg.value
-    );
-    */
+    
     emit StakeEvent(
       player, 
       activeRound, 

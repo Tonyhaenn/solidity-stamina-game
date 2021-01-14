@@ -9,14 +9,6 @@ import "hardhat-typechain";
 //Audit gas usage
 import "hardhat-gas-reporter"
 
-task("accounts", "Prints the list of accounts", async (args, hre) => {
-  const accounts = await hre.ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(await account.address);
-  }
-});
-
 const config: HardhatUserConfig = {
   solidity: "0.7.3",
   gasReporter: {
