@@ -5,12 +5,12 @@ Trying to avoid need to loop over every players balance
 2) Since we know the end date of the contract, 24H prior to end, start flagging players that play in that window, and therefore will get their entire stake back plus share of broken?
 3) hmm. still need a separate TX with loop to identify broken players?
 */
-pragma solidity >=0.4.21 <0.8.0;
+pragma solidity >=0.5.8 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "hardhat/console.sol";
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/math/SafeMath.sol';
+import 'hardhat/console.sol';
 
 /** 
 @title Stamina
@@ -25,12 +25,12 @@ contract Stamina is Ownable {
   uint256 public roundEnd;
   uint256 public activeRound;
   uint256 public houseRake;
-
+  /*
   struct Stake {
     uint256 amount;
     uint256 roundTotalAmount;
   }
-
+  */
   event StakeEvent (
     address indexed player,
     uint256 indexed round,
@@ -40,54 +40,15 @@ contract Stamina is Ownable {
     uint256 playerStakeCount
   );
 
-/* LOG EVENTS. REMOVE THESE
-*/
-  event LogEvent (
-    bytes32 txt,
-    uint256 lineNumber
-  );
-
-  event LogNum(
-    uint256 number,
-    uint256 lineNumber
-  );
-
-  event BeginStakeLogEvent(
-    uint256 priorDay,
-    uint256 priorDayRoundTotal,
-    uint256 currentDay, 
-    uint256 currentDayRoundTotal,
-    uint256 playerStakeCount,
-    uint256 stakeAmount
-  );
-
-  event EndStakeLogEvent(
-    uint256 priorDay,
-    uint256 priorDayRoundTotal,
-    uint256 currentDay, 
-    uint256 currentDayRoundTotal,
-    uint256 playerStakeCount,
-    uint256 stakeAmount
-  );
-
-  event debugShareEvent(
-    uint256 day,
-    uint256 brokenStakesVal,
-    uint256 fullStakes,
-    uint256 playerStakes,
-    uint256 winnings
-  );
-  
-  
-
   ///@notice For each round, day, store the total value of all stakes added. As player stakes, move value from Day1 to Day 2 (two operations, decrement total player stake from prior day and add to current day)
   /// roundNum: {day: balance}
-  mapping(uint256 => mapping(uint256 => uint256)) public roundDayStakeBalance;
+  mapping(uint256 => mapping(uint256 => uint256)) public globalRoundDayStakeBalance;
 
   ///@notice Mapping to store all stakes
   /// activeRound: {player: {dayNum: stake}}
-  mapping(uint256 => mapping(address => mapping(uint256 => Stake))) public roundPlayerStakeStorage;
+  mapping(uint256 => mapping(address => mapping(uint256 => uint256))) public playerRoundDayStakeBalance;
   
+  //TODO: Figure out if these are necessary
   /// roundNum: {player: numStakes}
   mapping(uint256 => mapping(address => uint256)) public playerStakeCount;
 
@@ -123,7 +84,7 @@ contract Stamina is Ownable {
   ///@notice Calculates how many days have elapsed since the round started
   function currentDayRound() private view returns(uint256) {
     // Round up (x + y - 1) ÷ y
-    require(block.timestamp >= roundStart);
+    require(block.timestamp >= roundStart, 'Blocktime prior to roundStart');
     uint256 secondsUntilEnd = roundEnd - block.timestamp;
     uint256 secondsElapsedRound = roundLength - secondsUntilEnd;
     uint256 daysElapsedRound = (secondsElapsedRound+ 1 days) / 1 days;
@@ -143,73 +104,54 @@ contract Stamina is Ownable {
 
     Gas cost seems high: >100k?
     */
-    require(msg.value >= 0 , "Must contribute value to stake");
+    require(msg.value > 0 , 'Must contribute value to stake');
     
     //Is the round ended? If so, advance round counter
     endRound();
+
+    
 
     address player = msg.sender;
     uint256 playerRoundTotalValue;
     uint256 currentDay = currentDayRound();
     uint256 priorDay = currentDay - 1;
-    /*
-    TODO:
-    Write out the expected flow of funds
-    Update variable names to be a tad clearer?
-    Add logging to show funds moving between states/days
-    */
-    //Get prior stake. If doesn't exist, expect 0, else Stake
-    Stake memory priorDayStake = roundPlayerStakeStorage[activeRound][player][priorDay];
-    Stake memory currentDayPriorStake = roundPlayerStakeStorage[activeRound][player][currentDay];
+    
+    //Get prior stake. If doesn't exist, expect 0, else uint256
+    uint256 priorDayStake = playerRoundDayStakeBalance[activeRound][player][priorDay];
+    uint256 currentDayPriorStake = playerRoundDayStakeBalance[activeRound][player][currentDay];
     
     //Figure out appropriate value to carry forward
-    // Consider if this should be re-written with safeMath add
-    if(priorDayStake.amount > 0 && currentDayPriorStake.amount > 0) {
-      playerRoundTotalValue = priorDayStake.roundTotalAmount + currentDayPriorStake.roundTotalAmount + msg.value;
-    } else if (priorDayStake.amount > 0) {
-      playerRoundTotalValue = priorDayStake.roundTotalAmount + msg.value;
-    } else if (currentDayPriorStake.amount > 0) {
-      playerRoundTotalValue = currentDayPriorStake.roundTotalAmount + msg.value;
+    
+    if(priorDayStake > 0 && currentDayPriorStake > 0) {
+      playerRoundTotalValue = priorDayStake + currentDayPriorStake + msg.value;
+    } else if (priorDayStake > 0) {
+      playerRoundTotalValue = priorDayStake + msg.value;
+    } else if (currentDayPriorStake > 0) {
+      playerRoundTotalValue = currentDayPriorStake + msg.value;
     } else {
       playerRoundTotalValue = msg.value;
     }
     
     //Update current day stake
-    roundPlayerStakeStorage[activeRound][player][currentDay] = Stake({
-        amount: msg.value, 
-        roundTotalAmount: playerRoundTotalValue
-        });
+    playerRoundDayStakeBalance[activeRound][player][currentDay] = playerRoundTotalValue;
     
     //Adjust totals
     //First decrement player total balance from priorday for round
     // Remove from both global counter, and player's prior day
     
-    if(priorDay > 0 && priorDayStake.roundTotalAmount > 0 ){
+    if(priorDay > 0 && priorDayStake > 0 ){
       //Set player stake balance to zero
-      roundPlayerStakeStorage[activeRound][player][priorDay].roundTotalAmount = 0;
+      playerRoundDayStakeBalance[activeRound][player][priorDay] = 0;
       
       //Remove player's prior day round total from the global stake balance
-      //Currently overflows -- why?
-      console.log('Current Player Stake Count: %s', playerStakeCount[activeRound][player] );
-      console.log('Current Day: %s', currentDay);
-      console.log('Current Day Round Total: %s', playerRoundTotalValue);
-      console.log('Prior Day: %s', roundDayStakeBalance[activeRound][priorDay]);
-      
-      console.log('Prior Day Round Total Amount: %s', priorDayStake.roundTotalAmount);
-      console.log('==================');
-      
-      roundDayStakeBalance[activeRound][priorDay] = roundDayStakeBalance[activeRound][priorDay].sub(priorDayStake.roundTotalAmount);
+    globalRoundDayStakeBalance[activeRound][priorDay] = globalRoundDayStakeBalance[activeRound][priorDay].sub(priorDayStake);
 
-      console.log('New Global Balance (sub): %s', roundDayStakeBalance[activeRound][priorDay]);
     }
     
     //Then add player total balance to today
-    console.log('Prior Global Balance: %s', roundDayStakeBalance[activeRound][currentDay]);
+    globalRoundDayStakeBalance[activeRound][currentDay] = globalRoundDayStakeBalance[activeRound][currentDay].add(playerRoundTotalValue);
     
-    roundDayStakeBalance[activeRound][currentDay] = roundDayStakeBalance[activeRound][currentDay].add(msg.value);
-    
-    console.log('New Global Balancel (add): %s', roundDayStakeBalance[activeRound][currentDay]);
-    
+    //TODO: Decide if these are strictly necessary
     playerStakeCount[activeRound][player] += 1;
     roundDayPlayerCount[activeRound][currentDay] +=1;
     
@@ -217,10 +159,11 @@ contract Stamina is Ownable {
       player, 
       activeRound, 
       msg.value, 
-      roundDayStakeBalance[activeRound][currentDay],
+      globalRoundDayStakeBalance[activeRound][currentDay],
       playerRoundTotalValue,
       playerStakeCount[activeRound][player]
     );
+
   }
 
   /**
@@ -235,7 +178,7 @@ contract Stamina is Ownable {
   
       uint256 brokenStakesVal;
       for (uint256 index = 0 ; index < day; index++) {
-        brokenStakesVal += roundDayStakeBalance[roundNum][index];
+        brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
       }
 
       return brokenStakesVal;
@@ -247,21 +190,13 @@ contract Stamina is Ownable {
    * @param roundNum round to calculate winnings for
    * @param player player address
   */
-  function playerRoundWinnings(uint256 roundNum, address player) public returns(uint256) {
+  function playerRoundWinnings(uint256 roundNum, address player) public view returns(uint256) {
    
     uint256 day = roundNum == activeRound ? currentDayRound() : roundLength;
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
-    uint256 fullStakes = roundDayStakeBalance[roundNum][day];
-    uint256 playerStakes = roundPlayerStakeStorage[roundNum][player][day].roundTotalAmount;
+    uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
+    uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 winnings = (brokenStakesVal * (1 - (houseRake / 100 )))*(playerStakes / fullStakes);
-
-    emit debugShareEvent(
-      day,
-      brokenStakesVal,
-      fullStakes,
-      playerStakes,
-      winnings
-    );
 
     return winnings;
   }
