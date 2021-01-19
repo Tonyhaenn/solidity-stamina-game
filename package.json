@@ -26,7 +26,7 @@
     "typescript": "^4.1.3"
   },
   "scripts": {
-    "test": "npx truffle test --network test"
+    "test": "npx hardhat test"
   },
   "repository": {
     "type": "git",

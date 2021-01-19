@@ -12,7 +12,6 @@ const advanceTimeAndBlock = async function ( time: number ) {
   if(currentBlock === null ){
     /* Workaround for https://github.com/nomiclabs/hardhat/issues/1183
     */
-    console.log("WARN: Null block when advancing time");
     await ethers.provider.send('evm_increaseTime', [time]);
     await ethers.provider.send('evm_mine',[]);  
     await ethers.provider.send('evm_increaseTime',[15]);
@@ -25,19 +24,18 @@ const advanceTimeAndBlock = async function ( time: number ) {
   
 };
 
-describe('Stamina Basics ', () => { 
+describe('Stamina', () => { 
   let snapshotId: string;  
   let owner: Signer;
   let signers: Signer[];
   
   let StaminaInstance: Stamina;
 
-  
-
-  const ONE_DAY = ( 24 * 60 * 60 );
-  const ONE_MINUTE = (60);
-
-  const ROUND_LENGTH = 14 * ONE_DAY;
+  const ONE_SECOND = 1
+  const ONE_MINUTE = (60 * ONE_SECOND);
+  const ONE_HOUR = (ONE_MINUTE * 60)
+  const ONE_DAY = ( 24 * ONE_HOUR );
+  const ROUND_LENGTH = (14 * ONE_DAY);
 
   before( async () => {
     signers = await ethers.getSigners();
@@ -72,7 +70,7 @@ describe('Stamina Basics ', () => {
     const r1 = await StaminaInstance.activeRound();
     const stake = ethers.utils.parseEther("10");
     
-    await advanceTimeAndBlock((ROUND_LENGTH)+1);
+    await advanceTimeAndBlock((ROUND_LENGTH)+ONE_SECOND);
     
     await StaminaInstance.stake({value:stake});
 
@@ -89,6 +87,16 @@ describe('Stamina Basics ', () => {
     const result = await StaminaInstance.playerRoundDayStakeBalance(1, address, 1);
     const resultAmount = result.toString();
     expect(resultAmount).to.equal(stake);
+  });
+
+  it('A player stake updates global day total', async function(){
+    const stake = ethers.utils.parseEther("1");
+    await StaminaInstance.stake({value: stake});
+    
+    const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,1);
+
+    expect(globalResult).to.equal(stake);
+
   });
 
   it('Minimum stake enforced', async ()=>{
@@ -108,7 +116,7 @@ describe('Stamina Basics ', () => {
     );
   });
   
-  it('Three sequential stakes have right player balance & right global balance', async () => {
+  it('Three sequential stakes have right player balance', async () => {
     const stake1 = ethers.utils.parseEther("1");
     const stake2 = ethers.utils.parseEther("1");
     const stake3 = ethers.utils.parseEther("1");
@@ -118,28 +126,47 @@ describe('Stamina Basics ', () => {
     const address = await account1.getAddress();
     
     await StaminaInstance.connect(account1).stake({value: stake1})
-    await advanceTimeAndBlock( ONE_DAY + 1 );
+    await advanceTimeAndBlock( ONE_DAY );
 
     await StaminaInstance.connect(account1).stake({value: stake2})
-    await advanceTimeAndBlock( ONE_DAY + 1);
+    await advanceTimeAndBlock( ONE_DAY );
 
     await StaminaInstance.connect(account1).stake({value: stake3})
-    await advanceTimeAndBlock( ONE_DAY + 1);
+    await advanceTimeAndBlock( ONE_DAY );
 
     const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1, address, 3);
 
+    expect(playerResult).to.equal(sumOfStakes);
+    
+  });
+
+  it('Three sequential stakes have right global balance', async () => {
+    const stake1 = ethers.utils.parseEther("1");
+    const stake2 = ethers.utils.parseEther("1");
+    const stake3 = ethers.utils.parseEther("1");
+    const sumOfStakes = ethers.utils.parseEther("3");
+
+    const account1 = signers[1];
+    
+    await StaminaInstance.connect(account1).stake({value: stake1})
+    await advanceTimeAndBlock( ONE_DAY );
+
+    await StaminaInstance.connect(account1).stake({value: stake2})
+    await advanceTimeAndBlock( ONE_DAY );
+
+    await StaminaInstance.connect(account1).stake({value: stake3})
+    await advanceTimeAndBlock( ONE_DAY );
+
     const globalBalance = await StaminaInstance.globalRoundDayStakeBalance(1,3);
 
-    expect(playerResult).to.equal(sumOfStakes);
     expect(globalBalance).to.equal(sumOfStakes);
   });
 
-  it('Two stakes in sequential days, and a stake in the same day have the latest day total equal to the sum of all stakes', async function(){
+  it('Two stakes in sequential days, and a stake in the same day have the latest player day total equal to the sum of all stakes', async function(){
     const stake1 = ethers.utils.parseEther("1");
     const stake2 = ethers.utils.parseEther("1");
     const stake3 = ethers.utils.parseEther("1");
     
-
     const account = signers[1];
     const address = await account.getAddress();
 
@@ -154,23 +181,87 @@ describe('Stamina Basics ', () => {
 
     const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1,address,3)
 
-    const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,3);
     const totalStake = ethers.utils.parseEther("3");
 
     expect(playerResult).to.equal(totalStake);
-    expect(globalResult).to.equal(totalStake);
     
-  })
+  });
 
-  it('Two stakes in sequential days have day total equal to sum of both stakes')
+  it('Two stakes in sequential days, and a stake in the same day have the latest global balance equal to sum of all stakes', async function(){
+    const stake1 = ethers.utils.parseEther("1");
+    const stake2 = ethers.utils.parseEther("1");
+    const stake3 = ethers.utils.parseEther("1");
+    
+    const account = signers[1];
 
-  it('Two stakes in non-sequential rounds do not ')
+    await StaminaInstance.connect(account).stake({value: stake1})
+    await advanceTimeAndBlock(ONE_DAY);
 
-  it('A player stake updates global day total')
+    await StaminaInstance.connect(account).stake({value: stake2})
+    await advanceTimeAndBlock(ONE_DAY);
 
-  it('Multiple stakes in the same day update player balance properly')
+    await StaminaInstance.connect(account).stake({value: stake3})
+    await advanceTimeAndBlock(ONE_MINUTE);
 
-  it('Two stakes in sequential rounds have roundTotal equal to sum of both stakes')
+    const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,3);
+
+    const totalStake = ethers.utils.parseEther("3");
+
+    expect(globalResult).to.equal(totalStake);
+  });
+
+  it('Two stakes in non-sequential days result in player day balance of only last stake', async function(){
+    const stake1 = ethers.utils.parseEther("1");
+    const stake2 = ethers.utils.parseEther("1.1");
+  
+    const account = signers[1];
+    const address = await account.getAddress();
+
+    await StaminaInstance.connect(account).stake({value: stake1})
+    await advanceTimeAndBlock(2 * ONE_DAY);
+
+    await StaminaInstance.connect(account).stake({value: stake2})
+
+    const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1,address,3);
+
+    expect(playerResult).to.equal(stake2);
+  });
+
+  it('Multiple stakes in the same day update player balance to sum to total stakes', async function(){
+    
+    const stake1 = ethers.utils.parseEther('1');
+    const stake2 = ethers.utils.parseEther('1.1');
+    const sumOfStakes = ethers.utils.parseEther('2.1')
+    const account = signers[1];
+    const address = await account.getAddress();
+
+    await StaminaInstance.connect(account).stake({value: stake1})
+    await advanceTimeAndBlock(2 * ONE_MINUTE);
+
+    await StaminaInstance.connect(account).stake({value: stake2})
+
+    const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1,address,1);
+
+    expect(playerResult).to.equal(sumOfStakes);
+  });
+
+  it('Multiple stakes in the same day update global balance to sum to total stakes', async function(){
+    
+    const stake1 = ethers.utils.parseEther('1');
+    const stake2 = ethers.utils.parseEther('1.1');
+    const sumOfStakes = ethers.utils.parseEther('2.1')
+    const account = signers[1];
+    const address = await account.getAddress();
+
+    await StaminaInstance.connect(account).stake({value: stake1})
+    await advanceTimeAndBlock(2 * ONE_MINUTE);
+
+    await StaminaInstance.connect(account).stake({value: stake2})
+
+    const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,1);
+
+    expect(globalResult).to.equal(sumOfStakes);
+  });
 
   it('Two players, one breaks, and player 1 has the right share')
 });
