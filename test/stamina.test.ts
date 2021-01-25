@@ -1,9 +1,10 @@
-import { ethers } from "hardhat"; 
+import { ethers, run } from "hardhat"; 
 
 import { Signer } from "ethers";
 import { expect } from "chai";
 
 import { Stamina, Stamina__factory } from '../typechain';
+
 
 const advanceTimeAndBlock = async function ( time: number ) {
   const currentBlockNumber = await ethers.provider.getBlockNumber();
@@ -38,6 +39,8 @@ describe('Stamina', () => {
   const ROUND_LENGTH = (14 * ONE_DAY);
 
   before( async () => {
+    run('compile');
+
     signers = await ethers.getSigners();
     owner = signers[0]; 
     const StaminaFactory = (await ethers.getContractFactory("Stamina", owner)) as Stamina__factory;
@@ -251,7 +254,7 @@ describe('Stamina', () => {
     const stake2 = ethers.utils.parseEther('1.1');
     const sumOfStakes = ethers.utils.parseEther('2.1')
     const account = signers[1];
-    const address = await account.getAddress();
+    
 
     await StaminaInstance.connect(account).stake({value: stake1})
     await advanceTimeAndBlock(2 * ONE_MINUTE);
@@ -260,9 +263,44 @@ describe('Stamina', () => {
 
     const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,1);
 
-    expect(globalResult).to.equal(sumOfStakes);
+    expect(sumOfStakes).to.equal(globalResult);
   });
 
-  it('Two players, one breaks, and player 1 has the right share')
+  it('Three players, player3 breaks, and player 1 has the right share', async function (){
+    //TODO: THIS TEST IS FAILING
+    const stake = ethers.utils.parseEther("1");
+    const player1 = signers[1];
+    const player1Address = await player1.getAddress();
+    const player2 = signers[2];
+    const player3 = signers[3];
+    
+    await StaminaInstance.connect(player1).stake({value: stake});
+    await StaminaInstance.connect(player2).stake({value: stake});
+    await StaminaInstance.connect(player3).stake({value: stake});
+
+    await advanceTimeAndBlock( ONE_DAY );
+
+    await StaminaInstance.connect(player1).stake({value: stake});
+    await StaminaInstance.connect(player2).stake({value: stake});
+
+    await advanceTimeAndBlock( ONE_DAY );
+
+    
+    const brokenStakes = ethers.utils.parseEther('1')
+    const player1Stakes = ethers.utils.parseEther('2')
+    const allFullStakes = ethers.utils.parseEther('4')
+
+    //const houseRake = await StaminaInstance.houseRake();
+    const houseRake = 10;
+    
+    const poolOfBroken = brokenStakes.mul(100 - houseRake).div(100);
+    
+    const expectedWinnings = poolOfBroken.mul(player1Stakes).div(allFullStakes);
+
+    const actualWinnings = await StaminaInstance.playerRoundWinnings(1,player1Address);
+
+    expect(expectedWinnings).to.equal(actualWinnings);
+
+  })
 });
 

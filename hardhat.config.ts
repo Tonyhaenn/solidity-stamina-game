@@ -19,11 +19,8 @@ const config: HardhatUserConfig = {
 };
 */
 const config: HardhatUserConfig = {
-  solidity: "0.7.3",
-  networks:{
-    hardhat:{
-      loggingEnabled: false
-    }
+  solidity: {
+    version: "0.7.6"
   }
 }
 

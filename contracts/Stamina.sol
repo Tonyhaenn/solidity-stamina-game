@@ -25,6 +25,8 @@ contract Stamina is Ownable {
   uint256 public roundEnd;
   uint256 public activeRound;
   uint256 public houseRake;
+
+  uint256 public dummy;
   /*
   struct Stake {
     uint256 amount;
@@ -147,9 +149,13 @@ contract Stamina is Ownable {
     globalRoundDayStakeBalance[activeRound][priorDay] = globalRoundDayStakeBalance[activeRound][priorDay].sub(priorDayStake);
 
     }
-    
+
     //Then add player total balance to today
-    globalRoundDayStakeBalance[activeRound][currentDay] = globalRoundDayStakeBalance[activeRound][currentDay].add(playerRoundTotalValue);
+    if(currentDayPriorStake > 0){
+      globalRoundDayStakeBalance[activeRound][currentDay] = globalRoundDayStakeBalance[activeRound][currentDay].add(msg.value);
+    } else {
+      globalRoundDayStakeBalance[activeRound][currentDay] = globalRoundDayStakeBalance[activeRound][currentDay].add(playerRoundTotalValue);
+    }   
     
     //TODO: Decide if these are strictly necessary
     playerStakeCount[activeRound][player] += 1;
@@ -191,12 +197,30 @@ contract Stamina is Ownable {
    * @param player player address
   */
   function playerRoundWinnings(uint256 roundNum, address player) public view returns(uint256) {
-   
+
     uint256 day = roundNum == activeRound ? currentDayRound() : roundLength;
-    uint256 brokenStakesVal = brokenStakes(roundNum, day);
-    uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
+      
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
-    uint256 winnings = (brokenStakesVal * (1 - (houseRake / 100 )))*(playerStakes / fullStakes);
+    uint256 brokenStakesVal = brokenStakes(roundNum, day);
+
+    if(playerStakes == 0 || brokenStakesVal == 0){
+      return 0;
+    }
+    
+    console.log('day: %s', day);
+    console.log('roundNum: %s', roundNum);
+    console.log('playerStakes: %s', playerStakes);
+    console.log('brokenStakes: %s', brokenStakesVal);
+    
+    uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
+
+    //uint256 winnings = (brokenStakesVal * (1 - (houseRake / 100 )))*(playerStakes / fullStakes);
+    uint256 poolOfBroken = brokenStakesVal * (1 - (houseRake / 100));
+    console.log('Pool of Broken: %s', poolOfBroken);
+    //uint256 playerShare = (playerStakes / fullStakes)*100;
+    //uint256 winnings = (poolOfBroken * playerShare)/100;
+    uint256 winnings = (poolOfBroken * playerStakes)/fullStakes;
+    console.log('Winnigs: %s', winnings);
 
     return winnings;
   }
@@ -208,7 +232,5 @@ contract Stamina is Ownable {
   //  address playerAddress = msg.sender;
   //
   //}
-
-
 
 }
