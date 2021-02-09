@@ -62,7 +62,7 @@ contract Stamina is Ownable {
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
   
-  constructor() {
+  constructor() public {
     roundLength = 14 * 1 days;
     roundStart = block.timestamp;
     roundEnd = block.timestamp + roundLength;
@@ -96,6 +96,7 @@ contract Stamina is Ownable {
    *  @notice Primary entry point for playing the game. Checks for prior stake and carries forward value if time diff <24H
    */
   function stake() public payable {
+    
     /* DEV Notes
   
     Each time a player stakes
@@ -110,8 +111,6 @@ contract Stamina is Ownable {
     
     //Is the round ended? If so, advance round counter
     endRound();
-
-    
 
     address player = msg.sender;
     uint256 playerRoundTotalValue;
@@ -197,30 +196,18 @@ contract Stamina is Ownable {
    * @param player player address
   */
   function playerRoundWinnings(uint256 roundNum, address player) public view returns(uint256) {
-
-    uint256 day = roundNum == activeRound ? currentDayRound() : roundLength;
-      
+    
+    uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
-
+    
     if(playerStakes == 0 || brokenStakesVal == 0){
       return 0;
     }
     
-    console.log('day: %s', day);
-    console.log('roundNum: %s', roundNum);
-    console.log('playerStakes: %s', playerStakes);
-    console.log('brokenStakes: %s', brokenStakesVal);
-    
     uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
-
-    //uint256 winnings = (brokenStakesVal * (1 - (houseRake / 100 )))*(playerStakes / fullStakes);
-    uint256 poolOfBroken = brokenStakesVal * (1 - (houseRake / 100));
-    console.log('Pool of Broken: %s', poolOfBroken);
-    //uint256 playerShare = (playerStakes / fullStakes)*100;
-    //uint256 winnings = (poolOfBroken * playerShare)/100;
+    uint256 poolOfBroken = (brokenStakesVal * (100 - houseRake))/100;
     uint256 winnings = (poolOfBroken * playerStakes)/fullStakes;
-    console.log('Winnigs: %s', winnings);
 
     return winnings;
   }

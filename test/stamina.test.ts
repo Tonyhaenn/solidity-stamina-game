@@ -290,10 +290,9 @@ describe('Stamina', () => {
     const player1Stakes = ethers.utils.parseEther('2')
     const allFullStakes = ethers.utils.parseEther('4')
 
-    //const houseRake = await StaminaInstance.houseRake();
-    const houseRake = 10;
+    const houseRake = await StaminaInstance.houseRake();
     
-    const poolOfBroken = brokenStakes.mul(100 - houseRake).div(100);
+    const poolOfBroken = brokenStakes.mul(100 - houseRake.toNumber()).div(100);
     
     const expectedWinnings = poolOfBroken.mul(player1Stakes).div(allFullStakes);
 
