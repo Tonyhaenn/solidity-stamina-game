@@ -267,7 +267,6 @@ describe('Stamina', () => {
   });
 
   it('Three players, player3 breaks, and player 1 has the right share', async function (){
-    //TODO: THIS TEST IS FAILING
     const stake = ethers.utils.parseEther("1");
     const player1 = signers[1];
     const player1Address = await player1.getAddress();
@@ -299,6 +298,29 @@ describe('Stamina', () => {
     const actualWinnings = await StaminaInstance.playerRoundWinnings(1,player1Address);
 
     expect(expectedWinnings).to.equal(actualWinnings);
+
+  });
+  it('Player can withdraw winnings', async function (){
+    const stake = ethers.utils.parseEther("1");
+    const player1 = signers[1];
+    const player1Address = await player1.getAddress();
+    const player2 = signers[2];
+    const player3 = signers[3];
+    
+    await StaminaInstance.connect(player1).stake({value: stake});
+    await StaminaInstance.connect(player2).stake({value: stake});
+    await StaminaInstance.connect(player3).stake({value: stake});
+
+    await advanceTimeAndBlock( ONE_DAY );
+
+    for (let step = 0; step < 13; step++) {
+      await StaminaInstance.connect(player1).stake({value: stake});
+      await StaminaInstance.connect(player2).stake({value: stake});
+      await advanceTimeAndBlock( ONE_DAY );  
+    }
+    
+    const player1Winnings = StaminaInstance.playerWithdraw(1);
+    expect(player1Winnings).to.gte(0);
 
   })
 });

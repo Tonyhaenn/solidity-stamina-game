@@ -201,6 +201,7 @@ contract Stamina is Ownable {
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
     
+
     if(playerStakes == 0 || brokenStakesVal == 0){
       return 0;
     }
@@ -215,9 +216,25 @@ contract Stamina is Ownable {
    *  @notice Allows a player to withdraw winnings
    *  @param roundNum of round where winnings should be withdrawn
    */
-  //function withdraw(uint256 roundNum) public  {
-  //  address playerAddress = msg.sender;
-  //
-  //}
+  function playerWithdraw(uint256 roundNum) public  {
+    require(roundNum != activeRound, 'Cannot withdraw from activeRound');
+    //Calculate winnings
+    uint256 playerWinnings = playerRoundWinnings(roundNum, msg.sender);
+    //Set player balance to 0
+    playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
+    //send funds
+    payable(msg.sender).transfer(playerWinnings);
+  }
+
+  /**
+   *  @notice Allows a owner to withdraw house rake
+   *  @param roundNum of round where winnings should be withdrawn
+   */
+  /*
+  function ownerWithdraw(uint256 roundNum) public onlyOwner {
+    
+  
+  } 
+  */
 
 }
