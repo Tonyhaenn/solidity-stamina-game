@@ -5,11 +5,11 @@ Trying to avoid need to loop over every players balance
 2) Since we know the end date of the contract, 24H prior to end, start flagging players that play in that window, and therefore will get their entire stake back plus share of broken?
 3) hmm. still need a separate TX with loop to identify broken players?
 */
-pragma solidity >=0.5.8 <0.8.0;
+pragma solidity >=0.5.8 <0.9.0;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
+//import '@openzeppelin/contracts/access/Ownable.sol';
+//import '@openzeppelin/contracts/math/SafeMath.sol';
 import 'hardhat/console.sol';
 
 /** 
@@ -58,6 +58,14 @@ contract Stamina is Ownable {
   /// round: {day: numPlayers}
   mapping(uint256 => mapping( uint256 => uint256)) public roundDayPlayerCount;
   
+  ///@notice playerWinnings: Mapping to keep track of player account balance
+  mapping(address => uint256) public playerWinningsBalance;
+
+  ///@notice accounts
+  mapping(address => uint256) public accounts;
+
+  ///@notice ownerBalance
+  uint256 public ownerBalance;
   /**
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
@@ -201,7 +209,6 @@ contract Stamina is Ownable {
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
     
-
     if(playerStakes == 0 || brokenStakesVal == 0){
       return 0;
     }
@@ -212,29 +219,46 @@ contract Stamina is Ownable {
 
     return winnings;
   }
+
   /**
-   *  @notice Allows a player to withdraw winnings
-   *  @param roundNum of round where winnings should be withdrawn
+   * @notice Allows a player to claim winnings in player account
+   * @param roundNum of round with winnings to claim 
    */
-  function playerWithdraw(uint256 roundNum) public  {
-    require(roundNum != activeRound, 'Cannot withdraw from activeRound');
+
+  function playerClaim(uint256 roundNum) public  {
+    require(roundNum != activeRound, 'Cannot claim from activeRound');
     //Calculate winnings
     uint256 playerWinnings = playerRoundWinnings(roundNum, msg.sender);
+    
     //Set player balance to 0
     playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
+    
     //send funds
-    payable(msg.sender).transfer(playerWinnings);
+    accounts[msg.sender] = playerWinnings;
   }
 
   /**
-   *  @notice Allows a owner to withdraw house rake
-   *  @param roundNum of round where winnings should be withdrawn
+   *  @notice Allows a player to withdraw winnings
    */
-  /*
-  function ownerWithdraw(uint256 roundNum) public onlyOwner {
-    
+
+   function playerWithdraw() public {
+     uint256 amount = accounts[msg.sender];
+     accounts[msg.sender] = 0;
+     payable(msg.sender).transfer(amount);
+   }
+
+  /**
+   *  @notice Allows a owner to claim house rake
+   
+   */
+  //*  @param roundNum of round where winnings should be withdrawn
+  function ownerClaim(uint256 roundNum) public onlyOwner {
+    require(roundNum != activeRound, 'Cannot claim from activeRound');
+    uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
+    //TODO: This seems like to could be problematic. Should keep track of prior rounds that have been already withdrawn?
+    ownerBalance = brokenStakes(roundNum, day);
   
   } 
-  */
+  
 
 }

@@ -7,21 +7,29 @@ import "@nomiclabs/hardhat-ethers";
 import "hardhat-typechain";
 
 //Audit gas usage
-/*import "hardhat-gas-reporter"
+import "hardhat-gas-reporter"
 
 const config: HardhatUserConfig = {
-  solidity: "0.7.3",
+  solidity: {
+    version: "0.8.2",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
   gasReporter: {
     currency: 'USD',
-    gasPrice: 192,
+    gasPrice: 210,
     enabled: (process.env.REPORT_GAS) ? true : false
   }
 };
-*/
+/*
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.7.6"
   }
 }
-
+*/
 export default config;

@@ -25,6 +25,7 @@ const advanceTimeAndBlock = async function ( time: number ) {
   
 };
 
+
 describe('Stamina', () => { 
   let snapshotId: string;  
   let owner: Signer;
@@ -63,7 +64,7 @@ describe('Stamina', () => {
     expect(result).to.equal(ownerAddress);
   });
 
-  it('The round length is ' + ROUND_LENGTH, async ()=>{
+  it('The round length is ' + ROUND_LENGTH + ' seconds', async ()=>{
     const expected = ROUND_LENGTH;
     const result = await StaminaInstance.roundLength();
     expect(+result).to.equal(expected);
@@ -296,14 +297,41 @@ describe('Stamina', () => {
     const expectedWinnings = poolOfBroken.mul(player1Stakes).div(allFullStakes);
 
     const actualWinnings = await StaminaInstance.playerRoundWinnings(1,player1Address);
-
+    
     expect(expectedWinnings).to.equal(actualWinnings);
 
   });
-  it('Player can withdraw winnings', async function (){
+  
+  it('Player can claim winnings', async function (){
     const stake = ethers.utils.parseEther("1");
     const player1 = signers[1];
+    const player2 = signers[2];
+    const player3 = signers[3];
     const player1Address = await player1.getAddress();
+    
+    await StaminaInstance.connect(player1).stake({value: stake});
+    await StaminaInstance.connect(player2).stake({value: stake});
+    await StaminaInstance.connect(player3).stake({value: stake});
+
+    await advanceTimeAndBlock( ONE_DAY );
+
+    for (let step = 0; step < 14; step++) {
+      await StaminaInstance.connect(player1).stake({value: stake});
+      await StaminaInstance.connect(player2).stake({value: stake});
+      await advanceTimeAndBlock( ONE_DAY );  
+    }
+  
+    await StaminaInstance.connect(player1).playerClaim(1, {gasLimit: 9500000});
+    
+    const player1Account = await StaminaInstance.connect(player1).accounts(player1Address);
+    expect(player1Account).to.be.gte(0);
+  });
+
+  it('the owner can withdraw broken stakes', async function(){
+    const stake = ethers.utils.parseEther("1");
+    const owner = signers[0];
+    
+    const player1 = signers[1];
     const player2 = signers[2];
     const player3 = signers[3];
     
@@ -313,15 +341,15 @@ describe('Stamina', () => {
 
     await advanceTimeAndBlock( ONE_DAY );
 
-    for (let step = 0; step < 13; step++) {
+    for (let step = 0; step < 14; step++) {
       await StaminaInstance.connect(player1).stake({value: stake});
       await StaminaInstance.connect(player2).stake({value: stake});
       await advanceTimeAndBlock( ONE_DAY );  
     }
-    
-    const player1Winnings = StaminaInstance.playerWithdraw(1);
-    expect(player1Winnings).to.gte(0);
 
-  })
+    const ownerShare = await StaminaInstance.connect(owner).ownerClaim(1);
+    console.log(ownerShare.value);
+  });
+  
 });
 
