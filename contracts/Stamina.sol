@@ -5,11 +5,11 @@ Trying to avoid need to loop over every players balance
 2) Since we know the end date of the contract, 24H prior to end, start flagging players that play in that window, and therefore will get their entire stake back plus share of broken?
 3) hmm. still need a separate TX with loop to identify broken players?
 */
-pragma solidity >=0.5.8 <0.9.0;
+pragma solidity >=0.5.8 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-//import '@openzeppelin/contracts/access/Ownable.sol';
-//import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/math/SafeMath.sol';
 import 'hardhat/console.sol';
 
 /** 
@@ -20,10 +20,13 @@ import 'hardhat/console.sol';
 contract Stamina is Ownable {
   using SafeMath for uint256;
 
+  uint256 public contractStart;
+
   uint256 public roundLength;
   uint256 public roundStart;
   uint256 public roundEnd;
-  uint256 public activeRound;
+  
+  //uint256 public activeRound;
   uint256 public houseRake;
 
   uint256 public dummy;
@@ -71,35 +74,30 @@ contract Stamina is Ownable {
   */
   
   constructor() public {
-    roundLength = 14 * 1 days;
-    roundStart = block.timestamp;
-    roundEnd = block.timestamp + roundLength;
-    activeRound = 1;
+    contractStart = block.timestamp;
     houseRake = 10;
+    roundLength = 14 * 1 days;
+    
   }
 
-  /**
-   * @notice Determines if round is ended. Called during stake.
-   */
-  function endRound() private {
-    uint256 currentTime = block.timestamp;
-    if (currentTime > roundEnd) {
-      activeRound += 1;
-      roundEnd = block.timestamp + roundLength;
-      return;
-    } 
-    return;
+  
+  ///@notice Calculates how many rounds have elapsed since contract deployed
+  function currentRound() public view returns(uint256){
+    uint256 secondsElapsed = block.timestamp - contractStart;
+    uint256 daysElapsed = (secondsElapsed  + 1 days) / 1 days;
+    //round up
+    uint256 round = (daysElapsed / (roundLength / 1 days)) + 1;
+    
+    return round;
   }
-
-  ///@notice Calculates how many days have elapsed since the round started
-  function currentDayRound() private view returns(uint256) {
-    // Round up (x + y - 1) ÷ y
-    require(block.timestamp >= roundStart, 'Blocktime prior to roundStart');
-    uint256 secondsUntilEnd = roundEnd - block.timestamp;
-    uint256 secondsElapsedRound = roundLength - secondsUntilEnd;
-    uint256 daysElapsedRound = (secondsElapsedRound+ 1 days) / 1 days;
-    return daysElapsedRound;
+  ///@notice Calculates day of current round
+  function currentDayRound() public view returns(uint256){
+    uint256 currentRoundNum = currentRound();
+    uint256 daysElapsed = ((block.timestamp - contractStart) + 1 days)/ 1 days;
+    uint256 roundDays = (roundLength * (currentRoundNum - 1))/ 1 days;    
+    return (daysElapsed - roundDays);
   }
+  
   /**
    *  @notice Primary entry point for playing the game. Checks for prior stake and carries forward value if time diff <24H
    */
@@ -117,13 +115,11 @@ contract Stamina is Ownable {
     */
     require(msg.value > 0 , 'Must contribute value to stake');
     
-    //Is the round ended? If so, advance round counter
-    endRound();
-
     address player = msg.sender;
     uint256 playerRoundTotalValue;
     uint256 currentDay = currentDayRound();
     uint256 priorDay = currentDay - 1;
+    uint256 activeRound = currentRound();
     
     //Get prior stake. If doesn't exist, expect 0, else uint256
     uint256 priorDayStake = playerRoundDayStakeBalance[activeRound][player][priorDay];
@@ -184,7 +180,7 @@ contract Stamina is Ownable {
    * @param roundNum round integer
    * @param day day integer
    */
-   function brokenStakes(uint256 roundNum, uint256 day) public view returns (uint256) {
+   function brokenStakes(uint256 roundNum, uint256 day) private view returns (uint256) {
      /* DEV NOTES:
       * Loop down through each day, summing each day total, excluding currentDay ?
       */
@@ -204,11 +200,12 @@ contract Stamina is Ownable {
    * @param player player address
   */
   function playerRoundWinnings(uint256 roundNum, address player) public view returns(uint256) {
+    uint256 activeRound = currentRound();
     
     uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
-    
+
     if(playerStakes == 0 || brokenStakesVal == 0){
       return 0;
     }
@@ -225,6 +222,37 @@ contract Stamina is Ownable {
    * @param roundNum of round with winnings to claim 
    */
 
+function playerClaim(uint256 roundNum) public returns(uint256 claimedAmount){
+  //endRound();
+  uint256 activeRound = currentRound();
+  require (roundNum != activeRound, 'Cannot claim from activeRound');
+  //Calculate Winnings
+  uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
+  uint256 playerStakes = playerRoundDayStakeBalance[roundNum][msg.sender][day];
+  uint256 brokenStakesVal;
+  
+  for (uint256 index = 0 ; index < day; index++) {
+    brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
+  }
+    
+  if(playerStakes == 0 || brokenStakesVal == 0){
+    return 0;
+  }
+    
+  uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
+  uint256 poolOfBroken = (brokenStakesVal * (100 - houseRake))/100;
+  claimedAmount = (poolOfBroken * playerStakes)/fullStakes;
+  
+  //Update player round balance
+  playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
+
+  //Add winnings to player account
+  accounts[msg.sender] += claimedAmount;
+  
+  return claimedAmount;
+}
+
+/*
   function playerClaim(uint256 roundNum) public  {
     require(roundNum != activeRound, 'Cannot claim from activeRound');
     //Calculate winnings
@@ -236,6 +264,7 @@ contract Stamina is Ownable {
     //send funds
     accounts[msg.sender] = playerWinnings;
   }
+  */
 
   /**
    *  @notice Allows a player to withdraw winnings
@@ -253,6 +282,8 @@ contract Stamina is Ownable {
    */
   //*  @param roundNum of round where winnings should be withdrawn
   function ownerClaim(uint256 roundNum) public onlyOwner {
+    uint256 activeRound = currentRound();
+
     require(roundNum != activeRound, 'Cannot claim from activeRound');
     uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
     //TODO: This seems like to could be problematic. Should keep track of prior rounds that have been already withdrawn?

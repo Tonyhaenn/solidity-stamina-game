@@ -11,7 +11,7 @@ import "hardhat-gas-reporter"
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.2",
+    version: "0.7.3",
     settings: {
       optimizer: {
         enabled: true,
