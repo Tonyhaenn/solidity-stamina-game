@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
 
 //Generate types for contracts on compile
-import "hardhat-typechain";
+import '@typechain/hardhat'
 
 //Audit gas usage
 import "hardhat-gas-reporter"
