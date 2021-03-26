@@ -60,6 +60,7 @@ describe('Stamina', () => {
 
   describe('Contract Basics', ()=>{
     it('The deployer is the owner', async () => {
+      //TODO: I'm not sure this is actually testing what I think it's testing
       const result = await StaminaInstance.owner();
       const ownerAddress = await owner.getAddress()
     
@@ -125,6 +126,13 @@ describe('Stamina', () => {
       expect(2).to.equal(day.toNumber());
     })
 
+    it('The contract knows after thirteen days, the round day is 14', async()=>{
+      await advanceTimeAndBlock(ONE_DAY*13);
+      const day = await StaminaInstance.currentDayRound();
+      
+      expect(14).to.equal(day.toNumber());
+    })
+
     it('The contract knows after fourteen days, the round day is 1', async()=>{
       await advanceTimeAndBlock(ONE_DAY*14);
       const day = await StaminaInstance.currentDayRound();
@@ -143,12 +151,14 @@ describe('Stamina', () => {
   describe('Staking', ()=>{
     it('A player can stake', async ()=>{
       const stake = ethers.utils.parseEther("1");
-      await StaminaInstance.stake({value: stake});
+      const player = signers[1];
+      const address = await player.getAddress();
+
+      await StaminaInstance.connect(player).stake({value: stake});
       
-      const address = await signers[0].getAddress();
       const result = await StaminaInstance.playerRoundDayStakeBalance(1, address, 1);
       const resultAmount = result.toString();
-      expect(resultAmount).to.equal(stake);
+      expect(resultAmount).to.equal(stake); 
     });
 
     it('Minimum stake enforced', async ()=>{
@@ -370,17 +380,20 @@ describe('Stamina', () => {
         await StaminaInstance.connect(player1).stake({value: stake});
         await StaminaInstance.connect(player2).stake({value: stake});
         await advanceTimeAndBlock( ONE_DAY );  
+        
       }
+      
       await advanceTimeAndBlock( ONE_DAY * 2 );  
-      const r = await StaminaInstance.currentRound();
-  
+      
       const player1Claim = await StaminaInstance.connect(player1).playerClaim(1);    
+    
       const player1Account = await StaminaInstance.connect(player1).accounts(player1Address);
-      expect(player1Claim).to.equal(player1Account);
+      expect(player1Claim.toString()).to.equal(player1Account.toString());
     });
 
   })
   /*
+  
   
   
   //TODO: Add tests for rounds > 1

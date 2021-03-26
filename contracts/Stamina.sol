@@ -21,21 +21,9 @@ contract Stamina is Ownable {
   using SafeMath for uint256;
 
   uint256 public contractStart;
-
   uint256 public roundLength;
-  uint256 public roundStart;
-  uint256 public roundEnd;
-  
-  //uint256 public activeRound;
   uint256 public houseRake;
 
-  uint256 public dummy;
-  /*
-  struct Stake {
-    uint256 amount;
-    uint256 roundTotalAmount;
-  }
-  */
   event StakeEvent (
     address indexed player,
     uint256 indexed round,
@@ -77,7 +65,6 @@ contract Stamina is Ownable {
     contractStart = block.timestamp;
     houseRake = 10;
     roundLength = 14 * 1 days;
-    
   }
 
   
@@ -94,7 +81,13 @@ contract Stamina is Ownable {
   function currentDayRound() public view returns(uint256){
     uint256 currentRoundNum = currentRound();
     uint256 daysElapsed = ((block.timestamp - contractStart) + 1 days)/ 1 days;
-    uint256 roundDays = (roundLength * (currentRoundNum - 1))/ 1 days;    
+    uint256 roundDays = (roundLength * (currentRoundNum - 1))/ 1 days;
+    
+    console.log('currentRoundnum %s',currentRoundNum);
+    console.log('daysElapsed %s',daysElapsed);
+    console.log('roundDays %s',roundDays);
+    console.log('calc %s',(daysElapsed - roundDays));
+
     return (daysElapsed - roundDays);
   }
   
@@ -121,6 +114,9 @@ contract Stamina is Ownable {
     uint256 priorDay = currentDay - 1;
     uint256 activeRound = currentRound();
     
+    console.log('Stake, currentDay %s', currentDay);
+    console.log('Stake, priorDay %s', priorDay);
+
     //Get prior stake. If doesn't exist, expect 0, else uint256
     uint256 priorDayStake = playerRoundDayStakeBalance[activeRound][player][priorDay];
     uint256 currentDayPriorStake = playerRoundDayStakeBalance[activeRound][player][currentDay];
@@ -137,9 +133,11 @@ contract Stamina is Ownable {
       playerRoundTotalValue = msg.value;
     }
     
+
     //Update current day stake
     playerRoundDayStakeBalance[activeRound][player][currentDay] = playerRoundTotalValue;
     
+
     //Adjust totals
     //First decrement player total balance from priorday for round
     // Remove from both global counter, and player's prior day
@@ -149,8 +147,8 @@ contract Stamina is Ownable {
       playerRoundDayStakeBalance[activeRound][player][priorDay] = 0;
       
       //Remove player's prior day round total from the global stake balance
-    globalRoundDayStakeBalance[activeRound][priorDay] = globalRoundDayStakeBalance[activeRound][priorDay].sub(priorDayStake);
-
+      globalRoundDayStakeBalance[activeRound][priorDay] = globalRoundDayStakeBalance[activeRound][priorDay].sub(priorDayStake);
+      
     }
 
     //Then add player total balance to today
@@ -164,6 +162,7 @@ contract Stamina is Ownable {
     playerStakeCount[activeRound][player] += 1;
     roundDayPlayerCount[activeRound][currentDay] +=1;
     
+    
     emit StakeEvent(
       player, 
       activeRound, 
@@ -172,7 +171,7 @@ contract Stamina is Ownable {
       playerRoundTotalValue,
       playerStakeCount[activeRound][player]
     );
-
+    
   }
 
   /**
@@ -222,33 +221,44 @@ contract Stamina is Ownable {
    * @param roundNum of round with winnings to claim 
    */
 
-function playerClaim(uint256 roundNum) public returns(uint256 claimedAmount){
-  //endRound();
+function playerClaim(uint256 roundNum) public returns(uint256){
+  
+
   uint256 activeRound = currentRound();
+  
+  console.log('round num %s', roundNum);
   require (roundNum != activeRound, 'Cannot claim from activeRound');
   //Calculate Winnings
-  uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
-  uint256 playerStakes = playerRoundDayStakeBalance[roundNum][msg.sender][day];
-  uint256 brokenStakesVal;
+  uint256 day = roundLength / 1 days;
   
+  console.log('Day %s', day);
+
+  uint256 playerStakes = playerRoundDayStakeBalance[roundNum][msg.sender][day];
+
+  uint256 brokenStakesVal;
+
   for (uint256 index = 0 ; index < day; index++) {
     brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
   }
-    
+  console.log('Player stakes %s', playerStakes);
+  console.log('broken stakes %s', brokenStakesVal);
+  
   if(playerStakes == 0 || brokenStakesVal == 0){
+    console.log('Returning NOTHING');
     return 0;
   }
     
   uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
   uint256 poolOfBroken = (brokenStakesVal * (100 - houseRake))/100;
-  claimedAmount = (poolOfBroken * playerStakes)/fullStakes;
+  uint256 claimedAmount = (poolOfBroken * playerStakes)/fullStakes;
   
   //Update player round balance
   playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
 
   //Add winnings to player account
   accounts[msg.sender] += claimedAmount;
-  
+
+  console.log('Returning SOMETHING %s',claimedAmount);
   return claimedAmount;
 }
 
