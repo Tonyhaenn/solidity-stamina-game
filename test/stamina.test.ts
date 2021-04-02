@@ -26,6 +26,7 @@ const advanceTimeAndBlock = async function ( time: number ) {
 };
 
 
+
 describe('Stamina', () => { 
   let snapshotId: string;  
   let owner: Signer;
@@ -67,7 +68,7 @@ describe('Stamina', () => {
       expect(result).to.equal(ownerAddress);
     });
   
-    it('The round length is ' + ROUND_LENGTH + ' seconds', async ()=>{
+    it('The round length is ' + ROUND_LENGTH/ONE_DAY + ' days', async ()=>{
       const expected = ROUND_LENGTH;
       const result = await StaminaInstance.roundLength();
       expect(+result).to.equal(expected);
@@ -75,42 +76,19 @@ describe('Stamina', () => {
   })
 
   describe('Time', ()=>{
-    it('The contract knows after 1 second, the round is 1', async()=>{
-      await advanceTimeAndBlock(ONE_SECOND);
-      const currentRound = await StaminaInstance.currentRound();
-      expect(currentRound.toNumber()).to.equal(1);
-    });
-  
-    it('The contract knows after 3 days, the round is 1', async()=>{
-      await advanceTimeAndBlock(3*ONE_DAY+ONE_SECOND);
-      const currentRound = await StaminaInstance.currentRound();
-      expect(currentRound.toNumber()).to.equal(1);
-    });
-  
-    it('The contract knows after 15 days, the round is 2', async()=>{
-      await advanceTimeAndBlock(15*ONE_DAY+ONE_SECOND);
-      const currentRound = await StaminaInstance.currentRound();
-      expect(2).to.equal(currentRound.toNumber());
-    });
-  
-    it('The contract knows after 29 days, the round is 3', async()=>{
-      await advanceTimeAndBlock(29*ONE_DAY+ONE_SECOND);
-      const currrentRound = await StaminaInstance.currentRound();
-      expect(3).to.equal(currrentRound.toNumber());
-    });
-  
-    it('The contract knows after 43 days, the round is 4', async()=>{
-      await advanceTimeAndBlock(43*ONE_DAY+ONE_SECOND);
-      const currrentRound = await StaminaInstance.currentRound();
-      expect(4).to.equal(currrentRound.toNumber());
-    });
-  
-    it('The contract knows after 57 days, the round is 5', async()=>{
-      await advanceTimeAndBlock(57*ONE_DAY+ONE_SECOND);
-      const currrentRound = await StaminaInstance.currentRound();
-      expect(5).to.equal(currrentRound.toNumber());
-    });
-  
+    const contractRound = (day: number)=> {
+      return Math.floor((day / (ROUND_LENGTH/ONE_DAY)))+1;
+    }
+
+    for (let index = 0; index < 60; index++) {
+      it('After ' + index + ' days and one second, the round is: ' + contractRound(index), async ()=>{
+        await advanceTimeAndBlock((index * ONE_DAY)+ONE_SECOND);
+        const currentRound = await StaminaInstance.currentRound();
+        const expectedRound = contractRound(index);
+        expect(expectedRound).to.equal(currentRound);
+      })
+      
+    }
     
     it('The contract knows after one second, the round day is 1', async()=>{
       await advanceTimeAndBlock(ONE_SECOND);

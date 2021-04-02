@@ -15,7 +15,7 @@ import 'hardhat/console.sol';
 /** 
 @title Stamina
 @author Tony Haenn
-@notice Game. Stake every day, get your stakes back, and win a share of those that don't have stamina.
+@notice Game. Play every day, get your tokens back, and win a share of those that don't have stamina.
 */
 contract Stamina is Ownable {
   using SafeMath for uint256;
@@ -72,21 +72,30 @@ contract Stamina is Ownable {
   function currentRound() public view returns(uint256){
     uint256 secondsElapsed = block.timestamp - contractStart;
     uint256 daysElapsed = (secondsElapsed  + 1 days) / 1 days;
-    //round up
-    uint256 round = (daysElapsed / (roundLength / 1 days)) + 1;
+    /*
+    TODO: Implement this everywhere 
+      The standard idiom for integer rounding up is:
+      int a = (59 + (4 - 1)) / 4;
+      You add the divisor minus one to the dividend.
+    */
     
+    uint256 round = (daysElapsed + ((roundLength/1 days)-1)) / (roundLength / 1 days);
+  
     return round;
   }
   ///@notice Calculates day of current round
   function currentDayRound() public view returns(uint256){
     uint256 currentRoundNum = currentRound();
-    uint256 daysElapsed = ((block.timestamp - contractStart) + 1 days)/ 1 days;
+    uint256 secondsElapsed = block.timestamp - contractStart;
+    uint256 daysElapsed = (secondsElapsed + 1 days)/ 1 days;
     uint256 roundDays = (roundLength * (currentRoundNum - 1))/ 1 days;
     
-    console.log('currentRoundnum %s',currentRoundNum);
-    console.log('daysElapsed %s',daysElapsed);
-    console.log('roundDays %s',roundDays);
-    console.log('calc %s',(daysElapsed - roundDays));
+    
+    //console.log('currentRoundnum %s',currentRoundNum);
+    //console.log('secondsElapsed %s',secondsElapsed);
+    //console.log('daysElapsed %s',daysElapsed);
+    //console.log('roundDays %s',roundDays);
+    //console.log('calc %s',(daysElapsed - roundDays));
 
     return (daysElapsed - roundDays);
   }
