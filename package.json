@@ -27,7 +27,8 @@
     "typescript": "^4.1.3"
   },
   "scripts": {
-    "test": "npx hardhat test"
+    "testAll": "npx hardhat test",
+    "testGrep":"npx mocha --require ts-node/register/files --extension ts --fgrep $1"
   },
   "repository": {
     "type": "git",
