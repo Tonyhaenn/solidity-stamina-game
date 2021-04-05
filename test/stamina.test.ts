@@ -77,7 +77,16 @@ describe('Stamina', () => {
 
   describe('Time', ()=>{
     const contractRound = (day: number)=> {
-      return Math.floor((day / (ROUND_LENGTH/ONE_DAY)))+1;
+      return (Math.floor((day / (ROUND_LENGTH/ONE_DAY)))+1);
+    }
+
+    const roundDay = (day: number) => {
+      const dayRoundUp = day+1
+      const currentRound = contractRound(day);
+      const roundLength = Math.floor(ROUND_LENGTH/ONE_DAY);
+      const roundDays = dayRoundUp - ((roundLength * (currentRound-1)));
+      return roundDays;
+
     }
 
     for (let index = 0; index < 60; index++) {
@@ -90,40 +99,14 @@ describe('Stamina', () => {
       
     }
     
-    it('The contract knows after one second, the round day is 1', async()=>{
-      await advanceTimeAndBlock(ONE_SECOND);
-      const day = await StaminaInstance.currentDayRound();
-      
-      expect(1).to.equal(day.toNumber());
-    })
-
-    it('The contract knows after one day, the round day is 2', async()=>{
-      await advanceTimeAndBlock(ONE_DAY);
-      const day = await StaminaInstance.currentDayRound();
-      
-      expect(2).to.equal(day.toNumber());
-    })
-
-    it('The contract knows after thirteen days, the round day is 14', async()=>{
-      await advanceTimeAndBlock(ONE_DAY*13);
-      const day = await StaminaInstance.currentDayRound();
-      
-      expect(14).to.equal(day.toNumber());
-    })
-
-    it('The contract knows after fourteen days, the round day is 1', async()=>{
-      await advanceTimeAndBlock(ONE_DAY*14);
-      const day = await StaminaInstance.currentDayRound();
-      
-      expect(1).to.equal(day.toNumber());
-    })
-
-    it('The contract knows after twenty-two days, the round day is 9', async()=>{
-      await advanceTimeAndBlock(ONE_DAY*22);
-      const day = await StaminaInstance.currentDayRound();
-      
-      expect(9).to.equal(day.toNumber());
-    })
+    for (let index=0; index<60;index++ ){
+      it('After ' + index + ' days and one second, the round day is: ' + roundDay(index), async()=>{
+        await advanceTimeAndBlock((index * ONE_DAY)+ONE_SECOND);
+        const currentDayRound = roundDay(index);
+        const expectedDayRound = await StaminaInstance.currentDayRound();
+        expect(expectedDayRound).to.equal(currentDayRound)
+      })
+    }
   })
   
   describe('Staking', ()=>{
@@ -361,12 +344,14 @@ describe('Stamina', () => {
         
       }
       
-      await advanceTimeAndBlock( ONE_DAY * 2 );  
+      await advanceTimeAndBlock( ONE_SECOND);  
       
-      const player1Claim = await StaminaInstance.connect(player1).playerClaim(1);    
-    
+      await StaminaInstance.connect(player1).playerClaim(1);    
+      const expectedWinnings = ethers.utils.parseEther( ((1*.9)/2).toString() )
+
       const player1Account = await StaminaInstance.connect(player1).accounts(player1Address);
-      expect(player1Claim.toString()).to.equal(player1Account.toString());
+      
+      expect(expectedWinnings).to.equal(player1Account.toString());
     });
 
   })

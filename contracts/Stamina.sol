@@ -88,16 +88,8 @@ contract Stamina is Ownable {
     uint256 currentRoundNum = currentRound();
     uint256 secondsElapsed = block.timestamp - contractStart;
     uint256 daysElapsed = (secondsElapsed + 1 days)/ 1 days;
-    uint256 roundDays = (roundLength * (currentRoundNum - 1))/ 1 days;
-    
-    
-    //console.log('currentRoundnum %s',currentRoundNum);
-    //console.log('secondsElapsed %s',secondsElapsed);
-    //console.log('daysElapsed %s',daysElapsed);
-    //console.log('roundDays %s',roundDays);
-    //console.log('calc %s',(daysElapsed - roundDays));
-
-    return (daysElapsed - roundDays);
+    uint256 currentDay = daysElapsed - ((roundLength/1 days)*(currentRoundNum - 1));
+    return currentDay;
   }
   
   /**
@@ -122,9 +114,6 @@ contract Stamina is Ownable {
     uint256 currentDay = currentDayRound();
     uint256 priorDay = currentDay - 1;
     uint256 activeRound = currentRound();
-    
-    console.log('Stake, currentDay %s', currentDay);
-    console.log('Stake, priorDay %s', priorDay);
 
     //Get prior stake. If doesn't exist, expect 0, else uint256
     uint256 priorDayStake = playerRoundDayStakeBalance[activeRound][player][priorDay];
@@ -230,18 +219,11 @@ contract Stamina is Ownable {
    * @param roundNum of round with winnings to claim 
    */
 
-function playerClaim(uint256 roundNum) public returns(uint256){
-  
-
+function playerClaim(uint256 roundNum) public {
   uint256 activeRound = currentRound();
-  
-  console.log('round num %s', roundNum);
   require (roundNum != activeRound, 'Cannot claim from activeRound');
   //Calculate Winnings
   uint256 day = roundLength / 1 days;
-  
-  console.log('Day %s', day);
-
   uint256 playerStakes = playerRoundDayStakeBalance[roundNum][msg.sender][day];
 
   uint256 brokenStakesVal;
@@ -249,12 +231,9 @@ function playerClaim(uint256 roundNum) public returns(uint256){
   for (uint256 index = 0 ; index < day; index++) {
     brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
   }
-  console.log('Player stakes %s', playerStakes);
-  console.log('broken stakes %s', brokenStakesVal);
   
-  if(playerStakes == 0 || brokenStakesVal == 0){
-    console.log('Returning NOTHING');
-    return 0;
+  if(playerStakes == 0 || brokenStakesVal == 0){  
+    return ;
   }
     
   uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
@@ -266,9 +245,8 @@ function playerClaim(uint256 roundNum) public returns(uint256){
 
   //Add winnings to player account
   accounts[msg.sender] += claimedAmount;
-
-  console.log('Returning SOMETHING %s',claimedAmount);
-  return claimedAmount;
+  return;
+  
 }
 
 /*
