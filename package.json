@@ -28,7 +28,7 @@
   },
   "scripts": {
     "testAll": "npx hardhat test",
-    "testGrep":"npx mocha --require ts-node/register/files --extension ts --fgrep $1"
+    "testGrep":"npx hardhat compile && npx mocha --require ts-node/register/files --extension ts --fgrep $1"
   },
   "repository": {
     "type": "git",
