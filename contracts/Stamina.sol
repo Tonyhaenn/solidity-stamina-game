@@ -57,6 +57,10 @@ contract Stamina is Ownable {
 
   ///@notice ownerBalance
   uint256 public ownerBalance;
+
+  ///@notice ownerRoundClaimMap
+  mapping(uint256 => bool) public ownerRoundClaimMap;
+
   /**
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
@@ -196,7 +200,7 @@ contract Stamina is Ownable {
    * @param roundNum round to calculate winnings for
    * @param player player address
   */
-  function playerRoundWinnings(uint256 roundNum, address player) public view returns(uint256) {
+  function playerRoundWinnings(uint256 roundNum, address player)  public view returns(uint256) {
     uint256 activeRound = currentRound();
     
     uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
@@ -249,19 +253,7 @@ function playerClaim(uint256 roundNum) public {
   
 }
 
-/*
-  function playerClaim(uint256 roundNum) public  {
-    require(roundNum != activeRound, 'Cannot claim from activeRound');
-    //Calculate winnings
-    uint256 playerWinnings = playerRoundWinnings(roundNum, msg.sender);
-    
-    //Set player balance to 0
-    playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
-    
-    //send funds
-    accounts[msg.sender] = playerWinnings;
-  }
-  */
+
 
   /**
    *  @notice Allows a player to withdraw winnings
@@ -274,18 +266,28 @@ function playerClaim(uint256 roundNum) public {
    }
 
   /**
-   *  @notice Allows a owner to claim house rake
-   
+   *  @notice Allows a owner to calculate current house rake
+   *  
    */
-  //*  @param roundNum of round where winnings should be withdrawn
+
+  function ownerHouseRake(uint256 roundNum) public view returns(uint256){
+
+  }
+  /**
+   *  @notice Allows a owner to claim house rake
+      @param roundNum of round where winnings should be withdrawn
+   */
+
   function ownerClaim(uint256 roundNum) public onlyOwner {
     uint256 activeRound = currentRound();
-
     require(roundNum != activeRound, 'Cannot claim from activeRound');
-    uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
+    bool ownerHasClaimed = ownerRoundClaimMap[activeRound];
+    require(ownerHasClaimed = false, 'Cannot claim rake twice');
+
+    uint256 day = roundLength / 1 days;
     //TODO: This seems like to could be problematic. Should keep track of prior rounds that have been already withdrawn?
     ownerBalance = brokenStakes(roundNum, day);
-  
+    ownerRoundClaimMap[activeRound] = true;
   } 
   
 
