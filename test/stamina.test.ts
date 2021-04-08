@@ -71,7 +71,7 @@ describe('Stamina', () => {
     it('The round length is ' + ROUND_LENGTH/ONE_DAY + ' days', async ()=>{
       const expected = ROUND_LENGTH;
       const result = await StaminaInstance.roundLength();
-      expect(+result).to.equal(expected);
+      expect(result.toString()).to.equal(expected.toString());
     });
   })
 
@@ -94,7 +94,7 @@ describe('Stamina', () => {
         await advanceTimeAndBlock((index * ONE_DAY)+ONE_SECOND);
         const currentRound = await StaminaInstance.currentRound();
         const expectedRound = contractRound(index);
-        expect(expectedRound).to.equal(currentRound);
+        expect(expectedRound.toString()).to.equal(currentRound.toString());
       })
       
     }
@@ -104,7 +104,7 @@ describe('Stamina', () => {
         await advanceTimeAndBlock((index * ONE_DAY)+ONE_SECOND);
         const currentDayRound = roundDay(index);
         const expectedDayRound = await StaminaInstance.currentDayRound();
-        expect(expectedDayRound).to.equal(currentDayRound)
+        expect(expectedDayRound.toString()).to.equal(currentDayRound.toString())
       })
     }
   })
@@ -119,7 +119,7 @@ describe('Stamina', () => {
       
       const result = await StaminaInstance.playerRoundDayStakeBalance(1, address, 1);
       const resultAmount = result.toString();
-      expect(resultAmount).to.equal(stake); 
+      expect(resultAmount.toString()).to.equal(stake.toString()); 
     });
 
     it('Minimum stake enforced', async ()=>{
@@ -135,7 +135,7 @@ describe('Stamina', () => {
       
       const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,1);
   
-      expect(globalResult).to.equal(stake); 
+      expect(globalResult.toString()).to.equal(stake.toString()); 
     });
 
     it('Stake event emitted when player stakes', async () =>{
@@ -167,7 +167,7 @@ describe('Stamina', () => {
   
       const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1, address, 3);
   
-      expect(playerResult).to.equal(sumOfStakes);
+      expect(playerResult.toString()).to.equal(sumOfStakes.toString());
     });
 
     it('Three sequential stakes have right global balance', async () => {
@@ -189,7 +189,7 @@ describe('Stamina', () => {
   
       const globalBalance = await StaminaInstance.globalRoundDayStakeBalance(1,3);
   
-      expect(globalBalance).to.equal(sumOfStakes);
+      expect(globalBalance.toString()).to.equal(sumOfStakes.toString());
     });
   
     it('Two stakes in sequential days, and a stake in the same day have the latest player day total equal to the sum of all stakes', async function(){
@@ -213,7 +213,7 @@ describe('Stamina', () => {
   
       const totalStake = ethers.utils.parseEther("3");
   
-      expect(playerResult).to.equal(totalStake);
+      expect(playerResult.toString()).to.equal(totalStake.toString());
       
     });
   
@@ -237,7 +237,7 @@ describe('Stamina', () => {
   
       const totalStake = ethers.utils.parseEther("3");
   
-      expect(globalResult).to.equal(totalStake);
+      expect(globalResult.toString()).to.equal(totalStake.toString());
     });
   
     it('Two stakes in non-sequential days result in player day balance of only last stake', async function(){
@@ -254,7 +254,7 @@ describe('Stamina', () => {
   
       const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1,address,3);
   
-      expect(playerResult).to.equal(stake2);
+      expect(playerResult.toString()).to.equal(stake2.toString());
     });
   
     it('Multiple stakes in the same day update player balance to sum to total stakes', async function(){
@@ -272,7 +272,7 @@ describe('Stamina', () => {
   
       const playerResult = await StaminaInstance.playerRoundDayStakeBalance(1,address,1);
   
-      expect(playerResult).to.equal(sumOfStakes);
+      expect(playerResult.toString()).to.equal(sumOfStakes.toString());
     });
   
     it('Multiple stakes in the same day update global balance to sum to total stakes', async function(){
@@ -289,7 +289,7 @@ describe('Stamina', () => {
   
       const globalResult = await StaminaInstance.globalRoundDayStakeBalance(1,1);
   
-      expect(sumOfStakes).to.equal(globalResult);
+      expect(sumOfStakes.toString()).to.equal(globalResult.toString());
     });    
   })
 
@@ -321,7 +321,7 @@ describe('Stamina', () => {
       const expectedWinnings = poolOfBroken.mul(player1Stakes).div(allFullStakes);
       const actualWinnings = await StaminaInstance.playerRoundWinnings(1,player1Address);
       
-      expect(expectedWinnings).to.equal(actualWinnings);
+      expect(expectedWinnings.toString()).to.equal(actualWinnings.toString());
     });
 
     it('Player can claim winnings', async function (){
@@ -351,7 +351,7 @@ describe('Stamina', () => {
 
       const player1Account = await StaminaInstance.connect(player1).accounts(player1Address);
       
-      expect(expectedWinnings).to.equal(player1Account.toString());
+      expect(expectedWinnings.toString()).to.equal(player1Account.toString());
     });
 
   })
