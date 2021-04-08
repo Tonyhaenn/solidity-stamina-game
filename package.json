@@ -4,18 +4,18 @@
   "description": "Stamina is a game where every player gets their stake back, as long as they play 1x every 24h. If a player has a gap greater than 24h, all of their stakes are forfeit. 90% of the forfeited stakes are distributed to the winners, in proportion to the amount they staked in total each round. ",
   "main": "index.js",
   "dependencies": {
-    "@openzeppelin/contracts": "3.3.0"
+    "@openzeppelin/contracts": "^3"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@typechain/ethers-v5": "^5.0.0",
+    "@nomiclabs/hardhat-waffle": "1.0.0",
+    "@typechain/ethers-v5": "^6.0",
     "@typechain/hardhat": "^1.0.1",
     "@types/chai": "^4.2.14",
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.16",
     "chai": "^4.2.0",
-    "ethereum-waffle": "^3.2.1",
+    "ethereum-waffle": "2.5.1",
     "ethers": "^5.0.24",
     "hardhat": "^2.0.7",
     "hardhat-gas-reporter": "^1.0.4",
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "testAll": "npx hardhat test",
-    "testGrep":"npx hardhat compile && npx mocha --require ts-node/register/files --extension ts --fgrep $1"
+    "testGrep": "npx hardhat compile && npx mocha --require ts-node/register/files --extension ts --fgrep $1"
   },
   "repository": {
     "type": "git",
