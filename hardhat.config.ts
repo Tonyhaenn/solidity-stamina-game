@@ -1,7 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 
 import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-ethers";
 
 //Generate types for contracts on compile
 import '@typechain/hardhat'
