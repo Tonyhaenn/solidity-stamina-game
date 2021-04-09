@@ -55,9 +55,6 @@ contract Stamina is Ownable {
   ///@notice accounts
   mapping(address => uint256) public accounts;
 
-  ///@notice ownerBalance
-  uint256 public ownerBalance;
-
   ///@notice ownerRoundClaimMap
   mapping(uint256 => bool) public ownerRoundClaimMap;
 
@@ -65,7 +62,7 @@ contract Stamina is Ownable {
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
   
-  constructor() public {
+  constructor() {
     contractStart = block.timestamp;
     houseRake = 10;
     roundLength = 14 * 1 days;
@@ -177,24 +174,27 @@ contract Stamina is Ownable {
   }
 
   /**
+   *  @notice Allows an account to withdraw winnings
+   */
+
+  /**
    * @notice For a given round, return the total of all broken stakes
    * @param roundNum round integer
    * @param day day integer
    */
-   function brokenStakes(uint256 roundNum, uint256 day) private view returns (uint256) {
-     /* DEV NOTES:
+  function brokenStakes(uint256 roundNum, uint256 day) private view returns (uint256) {
+    /* DEV NOTES:
       * Loop down through each day, summing each day total, excluding currentDay ?
-      */
+    */
   
-      uint256 brokenStakesVal;
-      for (uint256 index = 0 ; index < day; index++) {
-        brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
-      }
+    uint256 brokenStakesVal;
+    for (uint256 index = 0 ; index < day; index++) {
+      brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
+    }
 
-      return brokenStakesVal;
-   }
+    return brokenStakesVal;
+  }
 
-   
   /** 
    * @notice Calculates a players winnings for a given round
    * @param roundNum round to calculate winnings for
@@ -203,7 +203,7 @@ contract Stamina is Ownable {
   function playerRoundWinnings(uint256 roundNum, address player)  public view returns(uint256) {
     uint256 activeRound = currentRound();
     
-    uint256 day = roundNum == activeRound ? currentDayRound()-1 : roundLength;
+    uint256 day = roundNum == activeRound ? currentDayRound()-1 : (roundLength / 1 days);
     uint256 playerStakes = playerRoundDayStakeBalance[roundNum][player][day];
     uint256 brokenStakesVal = brokenStakes(roundNum, day);
 
@@ -223,55 +223,39 @@ contract Stamina is Ownable {
    * @param roundNum of round with winnings to claim 
    */
 
-function playerClaim(uint256 roundNum) public {
-  uint256 activeRound = currentRound();
-  require (roundNum != activeRound, 'Cannot claim from activeRound');
-  //Calculate Winnings
-  uint256 day = roundLength / 1 days;
-  uint256 playerStakes = playerRoundDayStakeBalance[roundNum][msg.sender][day];
-
-  uint256 brokenStakesVal;
-
-  for (uint256 index = 0 ; index < day; index++) {
-    brokenStakesVal += globalRoundDayStakeBalance[roundNum][index];
-  }
-  
-  if(playerStakes == 0 || brokenStakesVal == 0){  
-    return ;
-  }
+  function playerClaim(uint256 roundNum) public {
+    uint256 activeRound = currentRound();
+    require (roundNum != activeRound, 'Cannot claim from activeRound');
     
-  uint256 fullStakes = globalRoundDayStakeBalance[roundNum][day];
-  uint256 poolOfBroken = (brokenStakesVal * (100 - houseRake))/100;
-  uint256 claimedAmount = (poolOfBroken * playerStakes)/fullStakes;
-  
-  //Update player round balance
-  playerRoundDayStakeBalance[roundNum][msg.sender][roundLength] = 0;
+    //Calculate Winnings
+    uint256 claimedAmount = playerRoundWinnings(roundNum, msg.sender);
+    
+    //Update player round balance
+    playerRoundDayStakeBalance[roundNum][msg.sender][(roundLength/ 1 days)] = 0;
 
-  //Add winnings to player account
-  accounts[msg.sender] += claimedAmount;
-  return;
-  
-}
-
-
-
-  /**
-   *  @notice Allows a player to withdraw winnings
-   */
-
-   function playerWithdraw() public {
-     uint256 amount = accounts[msg.sender];
-     accounts[msg.sender] = 0;
-     payable(msg.sender).transfer(amount);
-   }
+    //Add winnings to player account
+    accounts[msg.sender] += claimedAmount;
+    return;
+  }
 
   /**
    *  @notice Allows a owner to calculate current house rake
    *  
    */
 
-  function ownerHouseRake(uint256 roundNum) public view returns(uint256){
+  function ownerRoundTake(uint256 roundNum) public view returns(uint256){
+    uint256 activeRound = currentRound();
+    
+    uint256 day = roundNum == activeRound ? currentDayRound()-1 : (roundLength / 1 days);
+    uint256 brokenStakesVal = brokenStakes(roundNum, day);
 
+    if(brokenStakesVal == 0){
+      return 0;
+    }
+
+    uint256 ownerTake = (brokenStakesVal * houseRake)/100;
+    
+    return ownerTake;
   }
   /**
    *  @notice Allows a owner to claim house rake
@@ -281,14 +265,21 @@ function playerClaim(uint256 roundNum) public {
   function ownerClaim(uint256 roundNum) public onlyOwner {
     uint256 activeRound = currentRound();
     require(roundNum != activeRound, 'Cannot claim from activeRound');
-    bool ownerHasClaimed = ownerRoundClaimMap[activeRound];
-    require(ownerHasClaimed = false, 'Cannot claim rake twice');
+    
+    bool ownerHasClaimed = ownerRoundClaimMap[roundNum];
 
-    uint256 day = roundLength / 1 days;
-    //TODO: This seems like to could be problematic. Should keep track of prior rounds that have been already withdrawn?
-    ownerBalance = brokenStakes(roundNum, day);
-    ownerRoundClaimMap[activeRound] = true;
+    console.log('Owner claim status %s for round %s', ownerHasClaimed, roundNum);
+    require(ownerHasClaimed == false, 'Cannot claim rake twice');
+
+    uint ownerTake = ownerRoundTake(roundNum);
+    ownerRoundClaimMap[roundNum] = true;
+    accounts[owner()] += ownerTake;
   } 
-  
+
+  function accountWithdraw() public {
+    uint256 amount = accounts[msg.sender];
+    accounts[msg.sender] = 0;
+    msg.sender.transfer(amount);
+  }
 
 }

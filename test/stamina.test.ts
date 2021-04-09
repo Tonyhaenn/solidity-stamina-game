@@ -41,7 +41,6 @@ describe('Stamina', () => {
   const ROUND_LENGTH = (14 * ONE_DAY);
 
   before( async () => {
-    run('compile');
 
     signers = await ethers.getSigners();
     owner = signers[0]; 
@@ -141,7 +140,7 @@ describe('Stamina', () => {
     it('Stake event emitted when player stakes', async () =>{
       const stake =ethers.utils.parseEther("1");
       await expect(
-         StaminaInstance.stake({value: stake})
+        StaminaInstance.stake({value: stake})
       ).to.emit(
         StaminaInstance, 'StakeEvent'
       );
@@ -354,37 +353,102 @@ describe('Stamina', () => {
       expect(expectedWinnings.toString()).to.equal(player1Account.toString());
     });
 
-  })
-  /*
+    it('Player cannot claim same round winnings twice', async function(){
+      const stake = ethers.utils.parseEther("1");
+      const player1 = signers[1];
+      const player2 = signers[2];
+      const player3 = signers[3];
+      const player1Address = await player1.getAddress();
+      
+      await StaminaInstance.connect(player1).stake({value: stake});
+      await StaminaInstance.connect(player2).stake({value: stake});
+      await StaminaInstance.connect(player3).stake({value: stake});
   
+      await advanceTimeAndBlock( ONE_DAY );
+  
+      for (let step = 0; step < 13; step++) {
+        await StaminaInstance.connect(player1).stake({value: stake});
+        await StaminaInstance.connect(player2).stake({value: stake});
+        await advanceTimeAndBlock( ONE_DAY );  
+        
+      }
+      
+      await advanceTimeAndBlock( ONE_SECOND);  
+      
+      await StaminaInstance.connect(player1).playerClaim(1);    
+      
+      const player1AccountBal1 = await StaminaInstance.connect(player1).accounts(player1Address);
+      
+      await StaminaInstance.connect(player1).playerClaim(1);    
+      
+      const player1AccountBal2 = await StaminaInstance.connect(player1).accounts(player1Address);
+      
+      expect(player1AccountBal1.toString()).to.equal(player1AccountBal2.toString());
+    })
+
+    it('Owner can claim rake', async function (){
+      const stake = ethers.utils.parseEther("1");
+      const owner = signers[0];
+      const player1 = signers[1];
+      const player2 = signers[2];
+      const player3 = signers[3];
+      const ownerAddress = await owner.getAddress();
+      
+      await StaminaInstance.connect(player1).stake({value: stake});
+      await StaminaInstance.connect(player2).stake({value: stake});
+      await StaminaInstance.connect(player3).stake({value: stake});
+  
+      await advanceTimeAndBlock( ONE_DAY );
+  
+      for (let step = 0; step < 13; step++) {
+        await StaminaInstance.connect(player1).stake({value: stake});
+        await StaminaInstance.connect(player2).stake({value: stake});
+        await advanceTimeAndBlock( ONE_DAY );  
+        
+      }
+      
+      await advanceTimeAndBlock( ONE_SECOND);  
+      
+      await StaminaInstance.connect(owner).ownerClaim(1);    
+      const ownerTake = ethers.utils.parseEther( ((1*.1)).toString() )
+
+      const ownerAccount = await StaminaInstance.connect(owner).accounts(ownerAddress);
+      
+      expect(ownerTake.toString()).to.equal(ownerAccount.toString());
+    });
+
+    it('Owner cannot claim same round rake twice', async function(){
+      const stake = ethers.utils.parseEther("1");
+      const owner = signers[0];
+      const player1 = signers[1];
+      const player2 = signers[2];
+      const player3 = signers[3];
+      const ownerAddress = await owner.getAddress();
+      
+      await StaminaInstance.connect(player1).stake({value: stake});
+      await StaminaInstance.connect(player2).stake({value: stake});
+      await StaminaInstance.connect(player3).stake({value: stake});
+  
+      await advanceTimeAndBlock( ONE_DAY );
+  
+      for (let step = 0; step < 13; step++) {
+        await StaminaInstance.connect(player1).stake({value: stake});
+        await StaminaInstance.connect(player2).stake({value: stake});
+        await advanceTimeAndBlock( ONE_DAY );  
+        
+      }
+      
+      await advanceTimeAndBlock( ONE_SECOND);  
+      
+      await StaminaInstance.connect(owner).ownerClaim(1);    
+      await expect(StaminaInstance.connect(owner).ownerClaim(1)).to.be.reverted;
+
+    })
+  })
   
   
   //TODO: Add tests for rounds > 1
   
-/*
-  it('the owner can withdraw broken stakes', async function(){
-    const stake = ethers.utils.parseEther("1");
-    const owner = signers[0];
-    
-    const player1 = signers[1];
-    const player2 = signers[2];
-    const player3 = signers[3];
-    
-    await StaminaInstance.connect(player1).stake({value: stake});
-    await StaminaInstance.connect(player2).stake({value: stake});
-    await StaminaInstance.connect(player3).stake({value: stake});
 
-    await advanceTimeAndBlock( ONE_DAY );
-
-    for (let step = 0; step < 14; step++) {
-      await StaminaInstance.connect(player1).stake({value: stake});
-      await StaminaInstance.connect(player2).stake({value: stake});
-      await advanceTimeAndBlock( ONE_DAY );  
-    }
-
-    const ownerShare = await StaminaInstance.connect(owner).ownerClaim(1);
-    console.log(ownerShare.value);
-  });
-  */
 });
 
