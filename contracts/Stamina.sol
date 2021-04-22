@@ -1,10 +1,4 @@
 //SPDX-License-Identifier: UNLICENSED
-/*
-Trying to avoid need to loop over every players balance
-1) Keep track of total player value + all player values every time stake?
-2) Since we know the end date of the contract, 24H prior to end, start flagging players that play in that window, and therefore will get their entire stake back plus share of broken?
-3) hmm. still need a separate TX with loop to identify broken players?
-*/
 pragma solidity >=0.5.8 <0.8.0;
 pragma experimental ABIEncoderV2;
 
@@ -62,7 +56,7 @@ contract Stamina is Ownable {
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
   
-  constructor()  {
+  constructor() {
     contractStart = block.timestamp;
     houseRake = 10;
     roundLength = 14 * 1 days;
@@ -132,11 +126,9 @@ contract Stamina is Ownable {
       playerRoundTotalValue = msg.value;
     }
     
-
     //Update current day stake
     playerRoundDayStakeBalance[activeRound][player][currentDay] = playerRoundTotalValue;
-    
-
+  
     //Adjust totals
     //First decrement player total balance from priorday for round
     // Remove from both global counter, and player's prior day
@@ -160,7 +152,6 @@ contract Stamina is Ownable {
     //TODO: Decide if these are strictly necessary
     playerStakeCount[activeRound][player] += 1;
     roundDayPlayerCount[activeRound][currentDay] +=1;
-    
     
     emit StakeEvent(
       player, 
