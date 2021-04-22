@@ -62,7 +62,7 @@ contract Stamina is Ownable {
    * @notice Constructor for contract that sets base values for round length, and minimum stake
   */
   
-  constructor() {
+  constructor()  {
     contractStart = block.timestamp;
     houseRake = 10;
     roundLength = 14 * 1 days;
