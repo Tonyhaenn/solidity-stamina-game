@@ -2,8 +2,7 @@ import Head from 'next/head'
 import Nav from '../components/Nav'
 import Main from '../components/Main'
 import Hero from '../components/Hero'
-import PriorRounds from '../components/PriorRounds'
-import AccountBalance from '../components/AccountBalance'
+import PriorRounds from '../components/RoundDetail'
 import Roundoverview from '../components/RoundOverview'
 
 export default function Home() {
@@ -17,7 +16,6 @@ export default function Home() {
         <Hero />
         <Roundoverview />
         <PriorRounds />
-       {/* <AccountBalance />*/}
       </Main>
     </div>
   )

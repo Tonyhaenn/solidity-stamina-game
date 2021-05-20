@@ -1,12 +1,10 @@
 import { Fragment } from 'react'
 import { Disclosure } from '@headlessui/react'
 import { MenuIcon, XIcon } from '@heroicons/react/outline'
+import Link from 'next/link'
 
-const navigation = ['Home', 'FAQ', 'Buy Crypto']
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
+const navigation = [{url: "/FAQ",text: "FAQ"}]
 
 export default function Example() {
   return (
@@ -20,26 +18,30 @@ export default function Example() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <h2 className="pl-4 text-white flex-grow font-bold leading-7 sm:text-3xl sm:truncate">Stamina</h2>
-                  
+                  <Link href="/">
+                    <h2 className="pl-4 text-white flex-grow font-bold leading-7 sm:text-3xl sm:truncate">Stamina</h2>
+                  </Link>
                   <div className="hidden md:block">
                     <div className="ml-10 flex items-baseline space-x-4">
                       {navigation.map((item, itemIdx) =>
                         itemIdx === 0 ? (
-                          <Fragment key={item}>
-                            {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                            <a href="#" className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">
-                              {item}
-                            </a>
+                          <Fragment key={item.text}>
+                            <Link href={item.url}>
+                              <a className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">
+                                {item.text}
+                              </a>
+                            </Link>
                           </Fragment>
                         ) : (
+                          <Link href={item.url}>
                           <a
-                            key={item}
-                            href="#"
+                            key={item.text}
+                            
                             className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                           >
-                            {item}
+                            {item.text}
                           </a>
+                          </Link>
                         )
                       )}
                     </div>
@@ -72,20 +74,22 @@ export default function Example() {
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 {navigation.map((item, itemIdx) =>
                   itemIdx === 0 ? (
-                    <Fragment key={item}>
-                      {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                      <a href="#" className="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium">
-                        {item}
+                    <Fragment key={item.text}>
+                      <Link href={item.url}>
+                      <a  className="bg-gray-900 text-white block px-3 py-2 rounded-md text-base font-medium">
+                        {item.text}
                       </a>
+                      </Link>
                     </Fragment>
                   ) : (
-                    <a
-                      key={item}
-                      href="#"
-                      className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-                    >
-                      {item}
-                    </a>
+                    <Link href={item.url}>
+                      <a
+                        key={item.text}
+                        className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                      >
+                        {item.text}
+                      </a>
+                    </Link>
                   )
                 )}
               </div>

@@ -1,7 +1,7 @@
-import PriorRounds from "../components/PriorRounds";
+import RoundDetail from "../components/RoundDetail";
 
 export default function Sandbox(){
   return (
-    <PriorRounds />
+    <RoundDetail />
   )
 }
