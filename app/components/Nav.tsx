@@ -1,12 +1,15 @@
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { Disclosure } from '@headlessui/react'
 import { MenuIcon, XIcon } from '@heroicons/react/outline'
 import Link from 'next/link'
+import WalletPanel from './WalletPanel'
 
 
 const navigation = [{url: "/FAQ",text: "FAQ"}]
 
 export default function Example() {
+  const [walletPanel, toggleWalletPanel] = useState(false);
+
   return (
     <div>
       <Disclosure as="nav" className="bg-gray-800">
@@ -49,7 +52,7 @@ export default function Example() {
                 </div>
                 <div className="hidden md:block">
                   <div className="ml-4 flex items-center md:ml-6">
-                    <button className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                    <button onClick={()=>toggleWalletPanel(true)} className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                       <div className="items-center">
                         <span className="">Connect Wallet</span>
                       </div>
@@ -94,7 +97,7 @@ export default function Example() {
                 )}
               </div>
               <div className="pt-4 pb-3 border-t border-gray-700">
-                <div className="mt-3 px-2 space-y-1">
+                <div onClick={()=>toggleWalletPanel(true)} className="mt-3 px-2 space-y-1">
                   <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">
                     Connect Wallet
                   </a>
@@ -104,6 +107,10 @@ export default function Example() {
           </>
         )}
       </Disclosure>
+      <WalletPanel
+        open={walletPanel}
+        onClose={()=>toggleWalletPanel(false)}
+      />
     </div>
   )
 }
