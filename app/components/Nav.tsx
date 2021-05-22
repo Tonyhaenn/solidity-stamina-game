@@ -3,12 +3,25 @@ import { Disclosure } from '@headlessui/react'
 import { MenuIcon, XIcon } from '@heroicons/react/outline'
 import Link from 'next/link'
 import WalletPanel from './WalletPanel'
+import { useWeb3React } from '@web3-react/core'
 
 
 const navigation = [{url: "/FAQ",text: "FAQ"}]
 
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
+
 export default function Example() {
   const [walletPanel, toggleWalletPanel] = useState(false);
+  const { active } = useWeb3React()
+  
+  const walletStatusColor = function(status: boolean){
+    if(status){
+      return 'bg-green-500'
+    }
+    return 'bg-red-500'
+  }
 
   return (
     <div>
@@ -54,7 +67,9 @@ export default function Example() {
                   <div className="ml-4 flex items-center md:ml-6">
                     <button onClick={()=>toggleWalletPanel(true)} className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                       <div className="items-center">
-                        <span className="">Connect Wallet</span>
+                        <span className={classNames('h-2 w-2 rounded-full flex items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
+                        <span className="">Connect Wallet</span> 
+                        
                       </div>
                     </button> 
                   </div>
