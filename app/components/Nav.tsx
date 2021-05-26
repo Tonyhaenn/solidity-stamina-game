@@ -1,10 +1,11 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Disclosure } from '@headlessui/react'
 import { MenuIcon, XIcon } from '@heroicons/react/outline'
 import Link from 'next/link'
 import WalletPanel from './WalletPanel'
-import { useWeb3React } from '@web3-react/core'
 
+import { useWeb3React } from '@web3-react/core'
+import { useEagerConnect, useInactiveListener } from '../utils/hooks';
 
 const navigation = [{url: "/FAQ",text: "FAQ"}]
 
@@ -14,8 +15,19 @@ function classNames(...classes) {
 
 export default function Example() {
   const [walletPanel, toggleWalletPanel] = useState(false);
-  const { active } = useWeb3React()
-  
+  const { active, connector } = useWeb3React()
+  //const web3 = useWeb3React();
+  const [activatingConnector, setActivatingConnector] = useState()
+
+  useEffect(() => {
+    if (activatingConnector && activatingConnector === connector) {
+      setActivatingConnector(undefined)
+    }
+  }, [activatingConnector, connector])
+
+  const triedEager = useEagerConnect()
+  useInactiveListener(!triedEager || !!activatingConnector)
+
   const walletStatusColor = function(status: boolean){
     if(status){
       return 'bg-green-500'
@@ -69,7 +81,6 @@ export default function Example() {
                       <div className="items-center">
                         <span className={classNames('h-2 w-2 rounded-full flex items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
                         <span className="">Connect Wallet</span> 
-                        
                       </div>
                     </button> 
                   </div>
@@ -113,8 +124,10 @@ export default function Example() {
               </div>
               <div className="pt-4 pb-3 border-t border-gray-700">
                 <div onClick={()=>toggleWalletPanel(true)} className="mt-3 px-2 space-y-1">
+                  <span className={classNames('h-2 w-2 rounded-full flex items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
                   <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">
-                    Connect Wallet
+                    Connect Wallet 
+
                   </a>
                 </div>
               </div>

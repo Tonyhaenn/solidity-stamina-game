@@ -4,19 +4,11 @@ import Main from '../components/Main'
 import Hero from '../components/Hero'
 import PriorRounds from '../components/RoundDetail'
 import Roundoverview from '../components/RoundOverview'
-
-import { Web3ReactProvider } from '@web3-react/core'
-
-import { ethers } from 'ethers'
-const Web3Provider = ethers.providers.Web3Provider;
-
-function getLibrary(provider: any) {
-  return new Web3Provider(provider)
-}
+import Web3ReactProvider from '../components/Web3ReactProvider';
 
 export default function Home() {
   return (
-    <Web3ReactProvider getLibrary={getLibrary}>
+    <Web3ReactProvider>
       <div>
         <Head>
           <title>Stamina</title>
