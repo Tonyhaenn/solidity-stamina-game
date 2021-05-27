@@ -52,34 +52,31 @@ export default function RoundDetail(){
           </li>
         {rounds.map((round) => (
           <li key={round.roundNum} className="border-b border-gray-200">
-            <a href="#" className="block hover:bg-gray-50">
-              <div className="py-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-indigo-600 truncate">Round {round.roundNum}</p>
-                </div>
-                <div className="float-right">
-                      <a
-                        href="#"
-                        className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                      >
-                        Claim {round.total}
-                      </a>
-                </div> 
-                <div className="mt-2 sm:flex sm:justify-between">
-                  <div className="sm:flex">
-                    <p className="flex items-center text-sm text-gray-500">
-                      <CashIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                      Coin Inserted {round.playerCoin}
-                    </p>
-                    <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                      <SparklesIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                      Winnings {round.winnings}
-                    </p>
-                  </div>
-                </div>
-                
+            <div className="py-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-indigo-600 truncate">Round {round.roundNum}</p>
               </div>
-            </a>
+              <div className="float-right">
+                    <a
+                      href="#"
+                      className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Claim {round.total}
+                    </a>
+              </div> 
+              <div className="mt-2 sm:flex sm:justify-between">
+                <div className="sm:flex">
+                  <p className="flex items-center text-sm text-gray-500">
+                    <CashIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
+                    Coin Inserted {round.playerCoin}
+                  </p>
+                  <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                    <SparklesIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
+                    Winnings {round.winnings}
+                  </p>
+                </div>
+              </div>
+            </div>
           </li>
         ))}
       </ul>

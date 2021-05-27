@@ -13,7 +13,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function Example() {
+export default function Nav() {
   const [walletPanel, toggleWalletPanel] = useState(false);
   const { active, connector } = useWeb3React()
   //const web3 = useWeb3React();
