@@ -16,7 +16,6 @@ function classNames(...classes) {
 export default function Nav() {
   const [walletPanel, toggleWalletPanel] = useState(false);
   const { active, connector } = useWeb3React()
-  //const web3 = useWeb3React();
   const [activatingConnector, setActivatingConnector] = useState()
 
   useEffect(() => {
@@ -77,10 +76,10 @@ export default function Nav() {
                 </div>
                 <div className="hidden md:block">
                   <div className="ml-4 flex items-center md:ml-6">
-                    <button onClick={()=>toggleWalletPanel(true)} className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
-                      <div className="items-center">
-                        <span className={classNames('h-2 w-2 rounded-full flex items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
-                        <span className="">Connect Wallet</span> 
+                    <button onClick={()=>toggleWalletPanel(true)} className="bg-gray-900 p-1 px-3 rounded-md text-gray-400 hover:text-white ">
+                      <div className="items-center flex">
+                        <span className={classNames('h-2 w-2 mr-2 rounded-full ring-1 ring-white',walletStatusColor(active))}></span>
+                        <span>Connect Wallet</span>
                       </div>
                     </button> 
                   </div>
