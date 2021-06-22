@@ -32,7 +32,9 @@ export const network = new NetworkConnector({
 })
 
 export const walletconnect = new WalletConnectConnector({
-  rpc: { 1: RPC_URLS[1], 4: RPC_URLS[4] },
+//  rpc: { 1: RPC_URLS[1], 4: RPC_URLS[4] },
+  //rpc: { 31337: RPC_URLS[1] },
+  rpc: {31337: 'https://hh.bn.home'},
   qrcode: true,
   pollingInterval: POLLING_INTERVAL
 })

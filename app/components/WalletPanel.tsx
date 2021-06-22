@@ -1,13 +1,37 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState  } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XIcon } from '@heroicons/react/outline'
 
 import WalletProviders from './walletProviders'
+import { useWeb3React } from '@web3-react/core'
+
+import { classNames } from '../utils/utils'
+import { getWeb3ErrorMessage } from '../utils/walletUtils'
+
+function WalletError ({
+  error = undefined
+}) {
+  const classes = 'bg-red-200 rounded-md p-2 mt-5 mx-4'
+  
+  if(error === undefined){
+    return (
+      <div className={classNames('invisible',classes)}></div>
+    )
+  }
+  return (
+    <div className={classNames('visible',classes)}>
+      {getWeb3ErrorMessage(error)}
+    </div>
+  )
+}
 
 export default function WalletPanel({
   open = false,
   onClose = () => {}
 }) {
+  
+  const { error } = useWeb3React();
+
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog as="div" static className="fixed inset-0 overflow-hidden" open={open} onClose={onClose}>
@@ -40,12 +64,11 @@ export default function WalletPanel({
                       </div>
                     </div>
                   </div>
-                  <div className="mt-6 relative flex-1 px-4 sm:px-6">
-                    {/* Replace with your content */}
-                    <div className="absolute inset-0 px-4 sm:px-6">
+                  <div className="mt-6 flex-1 px-4 sm:px-6"> 
+                    <div className="inset-0 px-4 sm:px-6">
                       <WalletProviders />
                     </div>
-                    {/* /End replace */}
+                    <WalletError error={error}/>
                   </div>
                 </div>
               </div>

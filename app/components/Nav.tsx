@@ -5,7 +5,6 @@ import Link from 'next/link'
 import WalletPanel from './WalletPanel'
 
 import { useWeb3React } from '@web3-react/core'
-import { useEagerConnect, useInactiveListener } from '../utils/hooks';
 
 const navigation = [{url: "/FAQ",text: "FAQ"}]
 
@@ -15,18 +14,8 @@ function classNames(...classes) {
 
 export default function Nav() {
   const [walletPanel, toggleWalletPanel] = useState(false);
-  const { active, connector } = useWeb3React()
-  const [activatingConnector, setActivatingConnector] = useState()
-
-  useEffect(() => {
-    if (activatingConnector && activatingConnector === connector) {
-      setActivatingConnector(undefined)
-    }
-  }, [activatingConnector, connector])
-
-  const triedEager = useEagerConnect()
-  useInactiveListener(!triedEager || !!activatingConnector)
-
+  const { active, connector, account } = useWeb3React()
+  
   const walletStatusColor = function(status: boolean){
     if(status){
       return 'bg-green-500'
@@ -34,6 +23,12 @@ export default function Nav() {
     return 'bg-red-500'
   }
 
+  const walletStatusString = function(status: boolean){
+    if(status){
+      return `${account.substring(0, 6)}...${account.substring(account.length - 4)}`
+    }
+    return 'Connect Wallet'
+  }
   return (
     <div>
       <Disclosure as="nav" className="bg-gray-800">
@@ -79,7 +74,7 @@ export default function Nav() {
                     <button onClick={()=>toggleWalletPanel(true)} className="bg-gray-900 p-1 px-3 rounded-md text-gray-400 hover:text-white ">
                       <div className="items-center flex">
                         <span className={classNames('h-2 w-2 mr-2 rounded-full ring-1 ring-white',walletStatusColor(active))}></span>
-                        <span>Connect Wallet</span>
+                        <span>{walletStatusString(active)}</span>
                       </div>
                     </button> 
                   </div>
@@ -122,12 +117,9 @@ export default function Nav() {
                 )}
               </div>
               <div className="pt-4 pb-3 border-t border-gray-700">
-                <div onClick={()=>toggleWalletPanel(true)} className="mt-3 px-2 space-y-1">
-                  <span className={classNames('h-2 w-2 rounded-full flex items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
-                  <a href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">
-                    Connect Wallet 
-
-                  </a>
+                <div onClick={()=>toggleWalletPanel(true)} className="flex items-center mt-3 px-2 space-y-1 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">
+                  <span className={classNames('h-2 w-2 mr-2 mt-1 rounded-full items-center justify-center ring-1 ring-white',walletStatusColor(active))}></span>
+                  <span>{walletStatusString(active)}</span>
                 </div>
               </div>
             </Disclosure.Panel>
