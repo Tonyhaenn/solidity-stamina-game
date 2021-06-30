@@ -14,7 +14,7 @@ function classNames(...classes) {
 
 export default function Nav() {
   const [walletPanel, toggleWalletPanel] = useState(false);
-  const { active, connector, account } = useWeb3React()
+  const { active, account } = useWeb3React()
   
   const walletStatusColor = function(status: boolean){
     if(status){

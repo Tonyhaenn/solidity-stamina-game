@@ -15,6 +15,20 @@ const wallets = [
 
 import { classNames } from '../utils/utils'
 
+const hideIfActive = (active) => {
+  if(active){
+    return 'invisible'
+  }
+  return 'visible'
+}
+
+const showIfActive = (active) => {
+  if(active){
+    return 'visible'
+  }
+  return 'hidden'
+}
+
 export default function WalletProviders() {
   const { activate, connector } = useWeb3React()
 
@@ -36,25 +50,27 @@ export default function WalletProviders() {
         {wallets.map((wallet)=>(
           <WalletButton key={wallet.name} wallet={wallet} />
         ))}
+        <AccountInfo /> 
+        <LogoutButton />
+        
       </ul>
     </div>
   )
 }
 
-function WalletButton({wallet}){
-  const { connector, active, activate, deactivate } = useWeb3React();
+function AccountInfo(){
+  const { account, active } = useWeb3React();
+  const accountStr = account || "";
+  return (
+    <div className={classNames(showIfActive(active))} > 
+    <span className="text-lg leading-6 font-medium text-gray-900"> Account: </span>
+    <span className="text-md font-medium text-gray-700"> {accountStr.substring(0,6)}...{accountStr.substring(accountStr.length - 4, accountStr.length)} </span>
+    </div>
+  )
+}
 
-  function walletButtonClick(active, connector) {
-    //If we're active, tear it down
-    if(active){
-      deactivate();
-      resetWalletConnector(connector);
-      return;
-    }
-    //Else activate!
-    activate(connector)
-    return;
-  }
+function LogoutButton(){
+  const { active, deactivate, connector } = useWeb3React();
 
   const resetWalletConnector = (connector: AbstractConnector) => {
     if (
@@ -64,24 +80,42 @@ function WalletButton({wallet}){
     ) {
       connector.walletConnectProvider = undefined
     }
+    deactivate();
   }
-  
+
   return (
-     <button className="col-span-1 flex shadow-sm rounded-md" onClick={()=>walletButtonClick(active, wallet.connector)}>   
+    <button onClick={()=>(resetWalletConnector(connector))} 
+      className={classNames(showIfActive(active),"w-20 justify-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50")}>
+        Logout
+    </button>   
+  )
+}
+
+function WalletButton({wallet}){
+  const { connector, active, activate } = useWeb3React();
+  
+  const visible = ()=>{
+    if(!active) {
+      return 'visible'
+    } else if(active && connector === wallet.connector){
+      return 'visible'
+    }
+    return 'hidden'
+  }
+  //Check if active and if current connector; hide non-connected connectors
+  return (
+     <button className={classNames(visible(),"col-span-1 flex shadow-sm rounded-md")} onClick={()=>(activate(wallet.connector))}>   
         <div
         className={classNames(
           wallet.bgColor,
-          'flex-shrink-0 border-b border-gray-200 py-6 flex items-center justify-center w-16 text-white text-sm font-medium rounded-l-md'
+          'flex-shrink-0 border-b border-gray-200 py-4 flex items-center justify-center w-16 text-white text-sm font-medium rounded-l-md'
         )}>
           {wallet.initials}
         </div>
         <div className="flex-1 px-4 py-4 text-sm flex items-center justify-between border-t border-r border-b border-gray-200 bg-white rounded-r-md truncate">
-          <div className="flex flex-col px-4 text-sm truncate">
+          <div className="flex px-4 text-sm truncate">
             <span className="text-gray-900 font-medium hover:text-gray-600">
               {wallet.name}
-            </span>
-            <span className={classNames("text-gray-400 font-light italic")}>
-              Connected
             </span>
           </div> 
         </div> 
