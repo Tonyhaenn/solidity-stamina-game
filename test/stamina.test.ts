@@ -1,9 +1,10 @@
-import { ethers, run } from "hardhat"; 
+//import { ethers, run } from "hardhat"; 
 
 import { Signer } from "ethers";
 import { expect } from "chai";
 
 import { Stamina, Stamina__factory } from '../typechain';
+import {ethers, deployments, getNamedAccounts} from 'hardhat';
 
 
 const advanceTimeAndBlock = async function ( time: number ) {
@@ -41,13 +42,13 @@ describe('Stamina', () => {
   const ROUND_LENGTH = (14 * ONE_DAY);
 
   before( async () => {
-
+    const { deployer  } = await getNamedAccounts();
+    owner = await ethers.getSigner(deployer);
     signers = await ethers.getSigners();
-    owner = signers[0]; 
-    const StaminaFactory = (await ethers.getContractFactory("Stamina", owner)) as Stamina__factory;
-    
-    StaminaInstance = (await StaminaFactory.deploy()) as Stamina;
-    
+
+    await deployments.fixture(["Stamina"]);
+    const deployment = await deployments.get("Stamina");
+    StaminaInstance = (await ethers.getContractAt(deployment.abi, deployment.address)) as Stamina;
   });
 
   beforeEach( async function() {

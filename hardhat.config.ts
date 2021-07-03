@@ -1,6 +1,9 @@
 import { HardhatUserConfig } from "hardhat/config";
 
 import "@nomiclabs/hardhat-waffle";
+import 'hardhat-deploy';
+import '@nomiclabs/hardhat-ethers';
+
 
 //Generate types for contracts on compile
 import '@typechain/hardhat'
@@ -22,6 +25,9 @@ const config: HardhatUserConfig = {
     currency: 'USD',
     gasPrice: 210,
     enabled: (process.env.REPORT_GAS) ? true : false
+  },
+  namedAccounts: {
+    deployer: 0
   }
 };
 /*

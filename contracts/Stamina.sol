@@ -258,8 +258,7 @@ contract Stamina is Ownable {
     require(roundNum != activeRound, 'Cannot claim from activeRound');
     
     bool ownerHasClaimed = ownerRoundClaimMap[roundNum];
-
-    console.log('Owner claim status %s for round %s', ownerHasClaimed, roundNum);
+    
     require(ownerHasClaimed == false, 'Cannot claim rake twice');
 
     uint ownerTake = ownerRoundTake(roundNum);
