@@ -18,12 +18,22 @@ import { TorusConnector } from '@web3-react/torus-connector'
 1: process.env.RPC_URL_1 as string,
  4: process.env.RPC_URL_4 as string,
 */
+
+/*
+TODO: Figure out way to auto switch network based on env variable
+local dev: hh.bn.home
+polygon test net: 
+polygon main
+*/
 const POLLING_INTERVAL = 12000
+
 const RPC_URLS: { [chainId: number]: string } = {
-  31337: 'https://hh.bn.home' as string
+  31337: 'https://hh.bn.home' as string, // Local HH node 
+  80001: 'https://rpc-mumbai.maticvigil.com' as string, // polygon testnet
+  137: 'https://rpc-mainnet.maticvigil.com' as string, //polygon mainnet
 }
 
-export const injected = new InjectedConnector({ supportedChainIds: [1, 3, 4, 5, 42, 31337] })
+export const injected = new InjectedConnector({ supportedChainIds: [137, 80001, 31337] })
 
 //1: RPC_URLS[1], 4: RPC_URLS[4], 
 export const network = new NetworkConnector({
@@ -34,7 +44,7 @@ export const network = new NetworkConnector({
 export const walletconnect = new WalletConnectConnector({
 //  rpc: { 1: RPC_URLS[1], 4: RPC_URLS[4] },
   //rpc: { 31337: RPC_URLS[1] },
-  rpc: {31337: 'https://hh.bn.home'},
+//rpc: {31337: 'https://hh.bn.home'},
   qrcode: true,
   pollingInterval: POLLING_INTERVAL
 })

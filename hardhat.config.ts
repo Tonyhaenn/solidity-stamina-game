@@ -12,6 +12,13 @@ import '@typechain/hardhat'
 import "hardhat-gas-reporter"
 
 const config: HardhatUserConfig = {
+  networks: {
+    hh:{
+      url: 'https://hh.bn.home',
+      chainId: 31337,
+      accounts: 'remote'
+    }
+  },
   solidity: {
     version: "0.7.3",
     settings: {

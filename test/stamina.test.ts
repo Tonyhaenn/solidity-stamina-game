@@ -3,9 +3,13 @@
 import { Signer } from "ethers";
 import { expect } from "chai";
 
-import { Stamina, Stamina__factory } from '../typechain';
-import {ethers, deployments, getNamedAccounts} from 'hardhat';
 
+import { Stamina, Stamina__factory } from '../typechain';
+import {ethers, deployments, getNamedAccounts, network} from 'hardhat';
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const advanceTimeAndBlock = async function ( time: number ) {
   const currentBlockNumber = await ethers.provider.getBlockNumber();
@@ -53,6 +57,10 @@ describe('Stamina', () => {
 
   beforeEach( async function() {
     snapshotId = await ethers.provider.send('evm_snapshot', []);
+    if(network.name === 'hh') {
+      //Needed due to RPI capacity
+      sleep(650);
+    }
   })
 
   afterEach( async function() {
@@ -352,6 +360,7 @@ describe('Stamina', () => {
       const player1Account = await StaminaInstance.connect(player1).accounts(player1Address);
       
       expect(expectedWinnings.toString()).to.equal(player1Account.toString());
+      
     });
 
     it('Player cannot claim same round winnings twice', async function(){
@@ -385,6 +394,7 @@ describe('Stamina', () => {
       const player1AccountBal2 = await StaminaInstance.connect(player1).accounts(player1Address);
       
       expect(player1AccountBal1.toString()).to.equal(player1AccountBal2.toString());
+      
     })
 
     it('Owner can claim rake', async function (){
