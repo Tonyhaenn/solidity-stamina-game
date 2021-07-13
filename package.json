@@ -7,7 +7,7 @@
     "@openzeppelin/contracts": "^3"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2",
     "@typechain/ethers-v5": "^6.0",
     "@typechain/hardhat": "^1.0.1",

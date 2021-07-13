@@ -3,7 +3,6 @@
 import { Signer } from "ethers";
 import { expect } from "chai";
 
-
 import { Stamina, Stamina__factory } from '../typechain';
 import {ethers, deployments, getNamedAccounts, network} from 'hardhat';
 
@@ -65,6 +64,7 @@ describe('Stamina', () => {
 
   afterEach( async function() {
     await ethers.provider.send('evm_revert', [snapshotId]);
+    return;
   })
 
   describe('Contract Basics', ()=>{
