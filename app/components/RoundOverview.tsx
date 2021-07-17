@@ -1,9 +1,25 @@
 import { UsersIcon, CashIcon, SparklesIcon } from '@heroicons/react/outline'
+import { getContract } from '../utils/hooks'
+
+
+//TODO: BLARGH. MAKE THIS WORK. REFACTOR INTO OWN HOOK? ethers contract interaction require await...
+const contractDetails = async ()=>{
+  const contract = getContract();
+  let currentRound, currentDayRound, roundPlayerCount;
+  if(contract){
+    currentRound = await contract.currentRound();
+    currentDayRound = await contract.currentDayRound();
+    roundPlayerCount = await contract.roundPlayerCount(currentRound, currentDayRound);
+  }
+  return {currentRound, currentDayRound, roundPlayerCount}
+}
+
+const deets = contractDetails()
 
 const stats = [
   { id: 1, name: 'Total Pot size', stat: '71,897', icon: CashIcon, change: '122', changeType: 'increase' },
   { id: 2, name: 'Value of Broken Players', stat: '5,816', icon: SparklesIcon, change: '5.4%', changeType: 'increase' },
-  { id: 3, name: 'Number of Players', stat: '24', icon: UsersIcon, change: '3.2%', changeType: 'decrease' },
+  { id: 3, name: 'Number of Players', stat: deets.roundPlayerCount, icon: UsersIcon, change: '3.2%', changeType: 'decrease' },
 ]
 
 export default function RoundOverview() {

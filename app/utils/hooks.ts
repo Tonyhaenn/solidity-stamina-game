@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useWeb3React } from '@web3-react/core'
+import { ethers } from 'ethers';
+//TODO: Figure out how to make this env dependent :/
+import * as deployment from  '../../deployments/hh/Stamina.json' 
 
+//TODO: FIgure out if / how this can be utilized.
+//import { Stamina } from '../../typechain'
 import { injected } from './connectors'
 
 export function useEagerConnect() {
@@ -70,4 +75,15 @@ export function useInactiveListener(suppress: boolean = false) {
       }
     }
   }, [active, error, suppress, activate])
+}
+
+export function getContract(){
+  const { library, account } = useWeb3React();
+
+  if ( account ) {
+    const signer = library.getSigner(account);
+    const StaminaInstance = new ethers.Contract(deployment.address, deployment.abi, signer )
+    return StaminaInstance
+  }
+  return null;
 }

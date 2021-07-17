@@ -1,5 +1,3 @@
-//import { ethers, run } from "hardhat"; 
-
 import { Signer } from "ethers";
 import { expect } from "chai";
 
@@ -29,8 +27,6 @@ const advanceTimeAndBlock = async function ( time: number ) {
   
 };
 
-
-
 describe('Stamina', () => { 
   let snapshotId: string;  
   let owner: Signer;
@@ -58,7 +54,7 @@ describe('Stamina', () => {
     snapshotId = await ethers.provider.send('evm_snapshot', []);
     if(network.name === 'hh') {
       //Needed due to RPI capacity
-      sleep(650);
+      await sleep(650);
     }
   })
 

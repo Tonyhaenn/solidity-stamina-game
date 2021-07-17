@@ -4,7 +4,6 @@ import "@nomiclabs/hardhat-waffle";
 import 'hardhat-deploy';
 import '@nomiclabs/hardhat-ethers';
 
-
 //Generate types for contracts on compile
 import '@typechain/hardhat'
 
@@ -37,11 +36,5 @@ const config: HardhatUserConfig = {
     deployer: 0
   }
 };
-/*
-const config: HardhatUserConfig = {
-  solidity: {
-    version: "0.7.6"
-  }
-}
-*/
+
 export default config;
