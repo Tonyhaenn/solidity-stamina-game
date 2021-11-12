@@ -1,10 +1,11 @@
 import { UsersIcon, CashIcon, SparklesIcon } from '@heroicons/react/outline'
-import { getContract } from '../utils/hooks'
-
+import { useEffect, useState } from 'react';
+import { useStaminaContract } from '../utils/hooks'
+import {useWeb3React} from '@web3-react/core';
 
 //TODO: BLARGH. MAKE THIS WORK. REFACTOR INTO OWN HOOK? ethers contract interaction require await...
-const contractDetails = async ()=>{
-  const contract = getContract();
+/* const contractDetails = async ()=>{
+  const contract = useStaminaContract();
   let currentRound, currentDayRound, roundPlayerCount;
   if(contract){
     currentRound = await contract.currentRound();
@@ -14,15 +15,32 @@ const contractDetails = async ()=>{
   return {currentRound, currentDayRound, roundPlayerCount}
 }
 
-const deets = contractDetails()
+const deets = await contractDetails();
+*/
 
-const stats = [
-  { id: 1, name: 'Total Pot size', stat: '71,897', icon: CashIcon, change: '122', changeType: 'increase' },
-  { id: 2, name: 'Value of Broken Players', stat: '5,816', icon: SparklesIcon, change: '5.4%', changeType: 'increase' },
-  { id: 3, name: 'Number of Players', stat: deets.roundPlayerCount, icon: UsersIcon, change: '3.2%', changeType: 'decrease' },
-]
 
 export default function RoundOverview() {
+  const StaminaContract = useStaminaContract();
+  //const { account, chainId, library } = useWeb3React();
+  const [numPlayers, setNumPlayers ] = useState('...')
+
+  useEffect(()=>{
+    async ()=>{
+      if(!!StaminaContract){
+        const r = await StaminaContract.currentRound();
+        const d = await StaminaContract.currentDayRound();
+        const np = await StaminaContract.roundDayPlayerCount(r,d);
+        setNumPlayers(np)
+      }
+    }
+  }, [])
+  
+  const stats = [
+    { id: 1, name: 'Total Pot size', stat: '71,897', icon: CashIcon, change: '122', changeType: 'increase' },
+    { id: 2, name: 'Value of Broken Players', stat: '5,816', icon: SparklesIcon, change: '5.4%', changeType: 'increase' },
+    { id: 3, name: 'Number of Players', stat: numPlayers, icon: UsersIcon, change: '3.2%', changeType: 'decrease' },
+  ]  
+  
   return (
     <div className="bg-white px-4 mt-6 mb-2 sm:px-6">
       

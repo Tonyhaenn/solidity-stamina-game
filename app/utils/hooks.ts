@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useWeb3React } from '@web3-react/core'
 import { ethers } from 'ethers';
 //TODO: Figure out how to make this env dependent :/
-import * as deployment from  '../../deployments/hh/Stamina.json' 
+const deployment = await import('../../deployments/hh/Stamina.json')
 
 //TODO: FIgure out if / how this can be utilized.
 //import { Stamina } from '../../typechain'
 import { injected } from './connectors'
+import AccountBalance from '../components/AccountBalance';
 
 export function useEagerConnect() {
   const { activate, active } = useWeb3React()
@@ -77,13 +78,42 @@ export function useInactiveListener(suppress: boolean = false) {
   }, [active, error, suppress, activate])
 }
 
-export function getContract(){
-  const { library, account } = useWeb3React();
-
-  if ( account ) {
-    const signer = library.getSigner(account);
-    const StaminaInstance = new ethers.Contract(deployment.address, deployment.abi, signer )
-    return StaminaInstance
+export function useStaminaContract() {
+  const { account, library, chainId  } = useWeb3React()
+  
+  const [staminaContract, setStamina] = useState(null);
+  //TODO: This seems to run just once. Then the state above isn't preserved between renders
+  // useMemo ? How do get it to update?
+  useMemo( ()=>{
+    if (!!account ) {
+      const signer = library.getSigner(account);
+      const StaminaInstance = new ethers.Contract(deployment.address, deployment.abi, signer )
+      setStamina(StaminaInstance);
+      return;
+    }
+    setStamina(null)
+  }, [account, chainId, library])
+  //Error because useEffect only runs conditionally?
+  /*
+  const [ currentRound, setCurrentRound ] = useState(null);
+  useEffect(()=>{
+    async () => {
+      if(!!staminaContract){
+        const r = await staminaContract.currentRound();
+        setCurrentRound(r)
+      }
+      return
+    }
+    setCurrentRound(null)
+  }, [])
+  
+  if(!!staminaContract){
+    staminaContract['currentRoundVal'] = currentRound;
   }
-  return null;
+  */
+    
+  
+
+  return staminaContract;
 }
+
